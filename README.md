@@ -1,5 +1,10 @@
 # WTF
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Security: AAA](https://img.shields.io/badge/Security-AAA-brightgreen.svg)](SECURITY.md)
+[![Zero Dependencies](https://img.shields.io/badge/Dependencies-0-success.svg)](#wtf-doesnt-need-your-code)
+[![Gauntlet: 100/100](https://img.shields.io/badge/Gauntlet-100%2F100-brightgreen.svg)](#contributing)
+
 ### Your coding agent says it’s done. WTF checks.
 
 Any agent. Any Git repo. Local. No account. No AI required.
@@ -149,7 +154,9 @@ wtf init-agent
 
 - **Runs 100% locally**: Zero code or diffs ever leave your machine.
 - **Zero network calls**: Works completely offline.
-- **Zero telemetry**: No tracking, analytics, or background telemetry.
+- **Zero telemetry**: No tracking, analytics, or background pings.
+- **Zero runtime dependencies**: Pure, self-contained ESM bundle with 0 dependencies.
+- **Zero shell evaluation**: Git commands run directly via isolated binary execution (`shell: false`), immune to shell injection.
 - **No account or API key**: No signup, no LLM tokens, no monthly bill.
 - **Read-only by default**: `wtf` never modifies files or runs code. `wtf verify` only executes standard project test scripts when you explicitly ask it to.
 
