@@ -114,8 +114,8 @@ See what changed, what actually worked, and what deserves attention.
 \x1b[1mEVIDENCE TIERS:\x1b[0m
   REPORTED  Claims from external sources / commit messages
   OBSERVED  Directly observed in git diff & repository state
-  VERIFIED  Independently executed and validated by WTF
-  UNKNOWN   Unverified or missing evidence
+  VERIFIED  Independently executed checks (tests, typecheck, build)
+  UNKNOWN   Unverified checks or unprovable intent
 `);
 }
 
@@ -131,7 +131,7 @@ Before declaring any coding task complete:
 1. Run \`wtf\` (or \`wtf --json\`) to inspect all changes.
 2. Review all items under PAY ATTENTION and ALSO.
 3. If tests or typechecks exist, run \`wtf verify\` to independently validate them.
-4. Never describe code as verified unless WTF marks it VERIFIED.
+4. Never claim checks are verified without WTF VERIFIED evidence (passing checks do not prove broader intent is correct).
 5. If unresolved findings exist (e.g. skipped tests, debug leftovers, migration risks), fix them or document them in your final report.
 \`\`\`
 `);

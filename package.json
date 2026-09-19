@@ -29,7 +29,8 @@
     "test": "vitest run test",
     "test:watch": "vitest test",
     "gauntlet": "vitest run test/gauntlet.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "demo": "bash scripts/demo.sh"
   },
   "keywords": [
     "git",

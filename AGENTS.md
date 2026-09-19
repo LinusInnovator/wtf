@@ -31,7 +31,7 @@ Human decides
 ### Protocol Rules
 
 1. **Check before completion**: Always run `wtf` (or `wtf --json`) before concluding work.
-2. **Never claim code is verified without evidence**: Do not state that "tests pass" unless `wtf verify` independently validates them (`status: PASSED`, `tier: VERIFIED`).
+2. **Never claim code is verified without evidence**: Do not state that "tests pass" unless `wtf verify` independently validates them (`status: PASSED`, `tier: VERIFIED`). Remember that passing checks prove only that the executed tests/checks passed, not that overall user intent or software behavior is correct.
 3. **Inspect PAY ATTENTION**: If items appear under `PAY ATTENTION`, either resolve them or explain why they are intentional in your report.
 4. **Clean up hygiene**: Do not leave `console.log`, `debugger;`, or temporary `TODO` comments behind.
 5. **No silent skips**: Never introduce `it.skip` or comment out tests to artificially make test suites pass. WTF flags skipped tests immediately.

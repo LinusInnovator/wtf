@@ -50,7 +50,7 @@ EOF
 git add .
 git commit -qm "Initial commit"
 
-WTF_BIN="/Users/linus/Projects/WTF/bin/wtf.js"
+WTF_BIN="${WTF_BIN:-$(cd "$(dirname "$0")/.." && pwd)/bin/wtf.js}"
 
 echo ""
 echo "========================================================="
