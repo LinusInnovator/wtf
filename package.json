@@ -1,13 +1,28 @@
 {
   "name": "agent-wtf",
   "version": "0.1.0",
-  "description": "See what changed, what actually worked, and what deserves human/agent attention.",
+  "description": "Your coding agent says it's done. WTF checks.",
   "type": "module",
   "bin": {
     "wtf": "./bin/wtf.js",
     "agent-wtf": "./bin/wtf.js"
   },
   "main": "./dist/cli.js",
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "LICENSE",
+    "AGENTS.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agent-wtf/wtf.git"
+  },
+  "homepage": "https://github.com/agent-wtf/wtf#readme",
+  "bugs": {
+    "url": "https://github.com/agent-wtf/wtf/issues"
+  },
   "scripts": {
     "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node18 --outfile=dist/cli.js",
     "prepublishOnly": "npm run build && npm test",
