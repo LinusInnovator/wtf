@@ -122,7 +122,7 @@ npm install -g agent-wtf
 | :--- | :--- |
 | `wtf` | See what changed and what needs attention in your working tree. |
 | `wtf show` | View exact diff snippets and line evidence for every finding. |
-| `wtf verify` | Safely discover and run your tests/builds to produce a verified receipt. |
+| `wtf verify` | Discover and run your tests/builds to produce an independently verified receipt. |
 | `wtf --json` | Machine-readable evidence schema (`wtf/0.1`) for coding agents. |
 
 ---

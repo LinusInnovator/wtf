@@ -107,7 +107,7 @@ See what changed, what actually worked, and what deserves attention.
   -v, --version         Show version
 
 \x1b[1mSUBCOMMANDS:\x1b[0m
-  verify                Safely run detected project test and build targets
+  verify                Run detected project test and build targets
   show                  Display detailed evidence ledger
   init-agent            Print agent completion instruction template
 
