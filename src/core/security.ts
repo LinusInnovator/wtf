@@ -83,7 +83,7 @@ export function isPathInside(parentDir: string, targetPath: string): boolean {
  * Neutralizes repository-controlled external drivers, fsmonitors, hooks, and pagers.
  */
 const SAFE_GIT_CONFIG_OVERRIDES: string[] = [
-  '-c', 'core.fsmonitor=',
+  '-c', 'core.fsmonitor=false',
   '-c', 'diff.external=',
   '-c', 'core.hooksPath=/dev/null',
   '-c', 'pager.diff=false',

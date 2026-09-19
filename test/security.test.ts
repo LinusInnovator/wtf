@@ -151,6 +151,41 @@ describe('Security & Hardening Audit', () => {
         if (fs.existsSync(markerFile)) fs.unlinkSync(markerFile);
       }
     });
+
+    it('neutralizes malicious git smudge and textconv filters via cat-file and diff guards', () => {
+      const tempRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'wtf-filter-test-'));
+      const markerFile = path.join(os.tmpdir(), 'wtf-filter-marker.txt');
+      if (fs.existsSync(markerFile)) fs.unlinkSync(markerFile);
+
+      try {
+        safeGit(['init'], tempRepo);
+        safeGit(['config', 'user.email', 'test@example.com'], tempRepo);
+        safeGit(['config', 'user.name', 'Test'], tempRepo);
+
+        // Configure malicious smudge and textconv filter
+        safeGit(['config', 'filter.evil.smudge', `touch "${markerFile}" && cat`], tempRepo);
+        safeGit(['config', 'diff.evil.textconv', `touch "${markerFile}" && cat`], tempRepo);
+        fs.writeFileSync(path.join(tempRepo, '.gitattributes'), '* filter=evil diff=evil\n');
+
+        fs.writeFileSync(path.join(tempRepo, 'package.json'), '{"name":"test"}\n');
+        safeGit(['add', '.'], tempRepo);
+        safeGit(['commit', '-m', 'init'], tempRepo);
+
+        // cat-file -p must read the raw blob without invoking smudge filter
+        const catRes = safeGit(['cat-file', '-p', 'HEAD:package.json'], tempRepo);
+        expect(catRes.status).toBe(0);
+        expect(catRes.stdout).toContain('"name":"test"');
+
+        // diff must not invoke textconv
+        safeGit(['diff', 'HEAD'], tempRepo);
+
+        // Verify marker file was NEVER created
+        expect(fs.existsSync(markerFile)).toBe(false);
+      } finally {
+        fs.rmSync(tempRepo, { recursive: true, force: true });
+        if (fs.existsSync(markerFile)) fs.unlinkSync(markerFile);
+      }
+    });
   });
 
   describe('Terminal Injection & Control Sequence Sanitization', () => {

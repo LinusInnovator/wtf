@@ -150,17 +150,24 @@ wtf init-agent
 
 ---
 
-## WTF Doesn’t Need Your Code
+## Local by Default. Paranoid by Design.
 
-- **Runs 100% locally**: Zero code or diffs ever leave your machine.
-- **Zero network calls**: Works completely offline.
-- **Zero telemetry**: No tracking, analytics, or background pings.
-- **Zero runtime dependencies**: Pure ESM package with 0 runtime dependencies, reducing third-party supply-chain exposure.
-- **No shell evaluation for Git**: Git commands run directly via isolated binary execution (`shell: false`) with strict argument sanitization and overrides for external diff/fsmonitor drivers.
-- **Symlink & path containment**: File operations enforce realpath containment to prevent reading files outside the repository boundary.
-- **Terminal output sanitization**: Strips ANSI cursor escapes, OSC sequences, and Unicode Bidi overrides from untrusted inputs before printing.
-- **No account or API key**: No signup, no LLM tokens, no monthly bill.
-- **Read-only by default**: `wtf` never modifies files or runs code. `wtf verify` discovers and runs project test suites directly with local user permissions without an internal sandbox; only run verification on code you trust to execute.
+WTF is designed to inspect machine-generated changes, so it treats repository content as untrusted input.
+
+* **No code uploads**: Zero code or diffs ever leave your machine.
+* **No telemetry**: Works completely offline with zero tracking or background pings.
+* **No account or API key**: No signup, no LLM tokens, no monthly bill.
+* **No required AI model**: Fast, local deterministic analysis.
+* **No shell-based Git commands**: Direct binary spawning (`shell: false`) with baseline Git configuration overrides.
+* **Repository filesystem containment**: Enforces realpath containment to prevent symlinks from escaping the repository.
+* **Terminal control-sequence sanitization**: Strips ANSI cursor escapes, OSC sequences, and Unicode Bidi controls.
+* **Zero runtime npm dependencies**: Pure ESM package with 0 runtime dependencies, reducing third-party supply-chain exposure.
+
+Normal `wtf` analysis does not intentionally execute project code.
+
+`wtf verify` is different: it runs your project’s verification commands locally with your user permissions and is not sandboxed. Only use it on code you trust to execute.
+
+See [SECURITY.md](SECURITY.md) for details.
 
 ---
 

@@ -23,7 +23,7 @@ export function detectDependencyChanges(
 
       if (options.commit) {
         const safeCommit = sanitizeGitRef(options.commit);
-        const newRes = safeGit(['show', `${safeCommit}:${pkgPatch.path}`], repoRoot);
+        const newRes = safeGit(['cat-file', '-p', `${safeCommit}:${pkgPatch.path}`], repoRoot);
         if (newRes.status === 0) {
           try {
             newPkg = JSON.parse(newRes.stdout);
@@ -37,7 +37,7 @@ export function detectDependencyChanges(
           }
         }
 
-        const oldRes = safeGit(['show', `${safeCommit}^1:${pkgPatch.path}`], repoRoot);
+        const oldRes = safeGit(['cat-file', '-p', `${safeCommit}^1:${pkgPatch.path}`], repoRoot);
         if (oldRes.status === 0) {
           try {
             oldPkg = JSON.parse(oldRes.stdout);
@@ -48,14 +48,14 @@ export function detectDependencyChanges(
         const safeRev1 = sanitizeGitRef(rev1);
         const safeRev2 = sanitizeGitRef(rev2 || 'HEAD');
 
-        const newRes = safeGit(['show', `${safeRev2}:${pkgPatch.path}`], repoRoot);
+        const newRes = safeGit(['cat-file', '-p', `${safeRev2}:${pkgPatch.path}`], repoRoot);
         if (newRes.status === 0) {
           try {
             newPkg = JSON.parse(newRes.stdout);
           } catch {}
         }
 
-        const oldRes = safeGit(['show', `${safeRev1}:${pkgPatch.path}`], repoRoot);
+        const oldRes = safeGit(['cat-file', '-p', `${safeRev1}:${pkgPatch.path}`], repoRoot);
         if (oldRes.status === 0) {
           try {
             oldPkg = JSON.parse(oldRes.stdout);
@@ -69,7 +69,7 @@ export function detectDependencyChanges(
           } catch {}
         }
 
-        const oldRes = safeGit(['show', `HEAD:${pkgPatch.path}`], repoRoot);
+        const oldRes = safeGit(['cat-file', '-p', `HEAD:${pkgPatch.path}`], repoRoot);
         if (oldRes.status === 0) {
           try {
             oldPkg = JSON.parse(oldRes.stdout);
@@ -111,20 +111,20 @@ export function detectDependencyChanges(
 
       if (options.commit) {
         const safeCommit = sanitizeGitRef(options.commit);
-        const newRes = safeGit(['show', `${safeCommit}:${cargoPatch.path}`], repoRoot);
+        const newRes = safeGit(['cat-file', '-p', `${safeCommit}:${cargoPatch.path}`], repoRoot);
         if (newRes.status === 0) {
           newContent = newRes.stdout;
         } else {
           newContent = safeReadRepoFile(repoRoot, cargoPatch.path) || '';
         }
 
-        const oldRes = safeGit(['show', `${safeCommit}^1:${cargoPatch.path}`], repoRoot);
+        const oldRes = safeGit(['cat-file', '-p', `${safeCommit}^1:${cargoPatch.path}`], repoRoot);
         if (oldRes.status === 0) {
           oldContent = oldRes.stdout;
         }
       } else {
         newContent = safeReadRepoFile(repoRoot, cargoPatch.path) || '';
-        const oldRes = safeGit(['show', `HEAD:${cargoPatch.path}`], repoRoot);
+        const oldRes = safeGit(['cat-file', '-p', `HEAD:${cargoPatch.path}`], repoRoot);
         if (oldRes.status === 0) {
           oldContent = oldRes.stdout;
         }
