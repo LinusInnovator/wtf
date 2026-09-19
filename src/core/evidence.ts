@@ -25,7 +25,7 @@ export function analyzeRepo(
   // Run detectors
   const authFindings = detectAuthChanges(patches);
   const dbFindings = detectDatabaseChanges(patches);
-  const { findings: depFindings, summaryItems: depSummary } = detectDependencyChanges(patches, ctx.root);
+  const { findings: depFindings, summaryItems: depSummary } = detectDependencyChanges(patches, ctx.root, options);
   const { findings: envFindings, summaryItems: envSummary } = detectEnvironmentChanges(patches);
   const { findings: testFindings, summaryItems: testSummary } = detectTestChanges(patches);
   const { findings: hygieneFindings, summaryItems: hygieneSummary } = detectHygieneIssues(patches);

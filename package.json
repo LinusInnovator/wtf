@@ -11,8 +11,8 @@
   "scripts": {
     "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node18 --outfile=dist/cli.js",
     "prepublishOnly": "npm run build && npm test",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run test",
+    "test:watch": "vitest test",
     "gauntlet": "vitest run test/gauntlet.test.ts",
     "typecheck": "tsc --noEmit"
   },

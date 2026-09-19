@@ -254,7 +254,7 @@ export function collectPatches(
   if (options.range) {
     diffCmd = `git diff ${options.range}`;
   } else if (options.commit) {
-    diffCmd = `git diff ${options.commit}^!`;
+    diffCmd = `git show --format="" -m --first-parent ${options.commit}`;
   } else if (options.stagedOnly) {
     diffCmd = `git diff --cached`;
   } else if (ctx.hasCommits) {

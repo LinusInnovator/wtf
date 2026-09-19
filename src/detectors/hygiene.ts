@@ -17,6 +17,9 @@ export function detectHygieneIssues(patches: FilePatch[]): {
       /\.md$/i.test(patch.path) ||
       /(^|\/)bin\//i.test(patch.path) ||
       /(^|\/)cli\.[a-z]+$/i.test(patch.path) ||
+      /(^|\/)\.github\//i.test(patch.path) ||
+      /(^|\/)\.gitlab\//i.test(patch.path) ||
+      /\.(ya?ml|json|toml|xml|lock|sum)$/i.test(patch.path) ||
       patch.path.includes('scratch');
 
     for (const hunk of patch.hunks) {
@@ -44,7 +47,7 @@ export function detectHygieneIssues(patches: FilePatch[]): {
             });
           }
 
-          // Debug statements in production code
+          // Debug statements in production code (not in tests, docs, or CI workflow scripts)
           if (!isTestOrDocFile) {
             if (
               /\bdebugger;?\b/.test(content) ||
@@ -67,8 +70,9 @@ export function detectHygieneIssues(patches: FilePatch[]): {
             }
           }
 
-          // TODO / FIXME markers
-          if (/\b(TODO|FIXME|HACK|XXX)\b/i.test(content) && !isTestOrDocFile) {
+          // TODO / FIXME markers: uppercase only, inside comment lines only, never in data files
+          const isCommentLine = /^(\/\/|\/\*|\*|#|--|<!--)/.test(content);
+          if (isCommentLine && !isTestOrDocFile && /\b(TODO|FIXME|HACK|XXX)\b/.test(content)) {
             todoCount++;
             findings.push({
               id: `hygiene-todo-${patch.path}-${currentLineNum}`,

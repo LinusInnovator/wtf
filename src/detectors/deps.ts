@@ -1,17 +1,19 @@
 import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { FilePatch, Finding } from '../types.js';
+import type { AnalyzeOptions, FilePatch, Finding } from '../types.js';
 
 export function detectDependencyChanges(
   patches: FilePatch[],
-  repoRoot?: string
+  repoRoot?: string,
+  options: AnalyzeOptions = {}
 ): {
   findings: Finding[];
   summaryItems: string[];
 } {
   const findings: Finding[] = [];
   const addedDeps: string[] = [];
+  const updatedDeps: string[] = [];
   const removedDeps: string[] = [];
 
   const pkgPatch = patches.find((p) => p.path.endsWith('package.json'));
@@ -20,20 +22,62 @@ export function detectDependencyChanges(
     try {
       const fullPath = path.join(repoRoot, pkgPatch.path);
       let newPkg: any = {};
-      if (fs.existsSync(fullPath)) {
-        newPkg = JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
-      }
-
       let oldPkg: any = {};
-      try {
-        const oldContent = execSync(`git show HEAD:${pkgPatch.path}`, {
-          cwd: repoRoot,
-          stdio: ['pipe', 'pipe', 'pipe'],
-          encoding: 'utf-8',
-        });
-        oldPkg = JSON.parse(oldContent);
-      } catch {
-        oldPkg = {};
+
+      if (options.commit) {
+        try {
+          const newContent = execSync(`git show ${options.commit}:${pkgPatch.path}`, {
+            cwd: repoRoot,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            encoding: 'utf-8',
+          });
+          newPkg = JSON.parse(newContent);
+        } catch {
+          if (fs.existsSync(fullPath)) newPkg = JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
+        }
+
+        try {
+          const oldContent = execSync(`git show ${options.commit}^1:${pkgPatch.path}`, {
+            cwd: repoRoot,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            encoding: 'utf-8',
+          });
+          oldPkg = JSON.parse(oldContent);
+        } catch {
+          oldPkg = {};
+        }
+      } else if (options.range && options.range.includes('..')) {
+        const [rev1, rev2] = options.range.split('..');
+        try {
+          const newContent = execSync(`git show ${rev2 || 'HEAD'}:${pkgPatch.path}`, {
+            cwd: repoRoot,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            encoding: 'utf-8',
+          });
+          newPkg = JSON.parse(newContent);
+        } catch {}
+        try {
+          const oldContent = execSync(`git show ${rev1}:${pkgPatch.path}`, {
+            cwd: repoRoot,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            encoding: 'utf-8',
+          });
+          oldPkg = JSON.parse(oldContent);
+        } catch {}
+      } else {
+        if (fs.existsSync(fullPath)) {
+          newPkg = JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
+        }
+        try {
+          const oldContent = execSync(`git show HEAD:${pkgPatch.path}`, {
+            cwd: repoRoot,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            encoding: 'utf-8',
+          });
+          oldPkg = JSON.parse(oldContent);
+        } catch {
+          oldPkg = {};
+        }
       }
 
       const depFields = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
@@ -45,6 +89,8 @@ export function detectDependencyChanges(
         for (const [dep, ver] of Object.entries(newMap)) {
           if (!oldMap[dep]) {
             addedDeps.push(`${dep}@${ver}`);
+          } else if (oldMap[dep] !== ver) {
+            updatedDeps.push(`${dep} (${oldMap[dep]} -> ${ver})`);
           }
         }
 
@@ -65,18 +111,34 @@ export function detectDependencyChanges(
     try {
       const fullPath = path.join(repoRoot, cargoPatch.path);
       let newContent = '';
-      if (fs.existsSync(fullPath)) {
-        newContent = fs.readFileSync(fullPath, 'utf-8');
-      }
       let oldContent = '';
-      try {
-        oldContent = execSync(`git show HEAD:${cargoPatch.path}`, {
-          cwd: repoRoot,
-          stdio: ['pipe', 'pipe', 'pipe'],
-          encoding: 'utf-8',
-        });
-      } catch {
-        oldContent = '';
+
+      if (options.commit) {
+        try {
+          newContent = execSync(`git show ${options.commit}:${cargoPatch.path}`, {
+            cwd: repoRoot,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            encoding: 'utf-8',
+          });
+        } catch {
+          if (fs.existsSync(fullPath)) newContent = fs.readFileSync(fullPath, 'utf-8');
+        }
+        try {
+          oldContent = execSync(`git show ${options.commit}^1:${cargoPatch.path}`, {
+            cwd: repoRoot,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            encoding: 'utf-8',
+          });
+        } catch {}
+      } else {
+        if (fs.existsSync(fullPath)) newContent = fs.readFileSync(fullPath, 'utf-8');
+        try {
+          oldContent = execSync(`git show HEAD:${cargoPatch.path}`, {
+            cwd: repoRoot,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            encoding: 'utf-8',
+          });
+        } catch {}
       }
 
       const extractCargoDeps = (toml: string) => {
@@ -106,6 +168,8 @@ export function detectDependencyChanges(
       for (const [k, v] of newDeps.entries()) {
         if (!oldDeps.has(k)) {
           addedDeps.push(`${k} (${v})`);
+        } else if (oldDeps.get(k) !== v) {
+          updatedDeps.push(`${k} (${oldDeps.get(k)} -> ${v})`);
         }
       }
       for (const k of oldDeps.keys()) {
@@ -113,9 +177,7 @@ export function detectDependencyChanges(
           removedDeps.push(k);
         }
       }
-    } catch {
-      // fallback
-    }
+    } catch {}
   }
 
   // Fallback for requirements.txt / go.mod via hunks
@@ -135,7 +197,8 @@ export function detectDependencyChanges(
       for (const hunk of patch.hunks) {
         for (const line of hunk.lines) {
           if (line.startsWith('+') && !line.startsWith('+++')) {
-            const match = line.match(/^\s*([a-zA-Z0-9.\-\/]+)\s+(v[0-9a-zA-Z.\-]+)/);
+            const trimmed = line.slice(1).trim();
+            const match = trimmed.match(/^([a-zA-Z0-9.\-\/]+)\s+(v[0-9a-zA-Z.\-]+)/);
             if (match) {
               addedDeps.push(`${match[1]}@${match[2]}`);
             }
@@ -146,13 +209,16 @@ export function detectDependencyChanges(
   }
 
   const summaryItems: string[] = [];
-  if (addedDeps.length > 0) {
-    summaryItems.push(`+ ${addedDeps.length} ${addedDeps.length === 1 ? 'dependency' : 'dependencies'}`);
+  const totalChanged = addedDeps.length + updatedDeps.length;
+  if (totalChanged > 0) {
+    const noun = totalChanged === 1 ? 'dependency' : 'dependencies';
+    summaryItems.push(`+ ${totalChanged} ${noun}`);
+    const detailList = [...addedDeps, ...updatedDeps];
     findings.push({
       id: 'deps-added',
       category: 'DEPENDENCY',
-      title: `Added ${addedDeps.length} ${addedDeps.length === 1 ? 'dependency' : 'dependencies'}`,
-      description: `New dependencies added: ${addedDeps.slice(0, 5).join(', ')}${addedDeps.length > 5 ? ` and ${addedDeps.length - 5} more` : ''}`,
+      title: `${addedDeps.length > 0 ? `Added ${addedDeps.length}` : ''}${addedDeps.length > 0 && updatedDeps.length > 0 ? ', ' : ''}${updatedDeps.length > 0 ? `Updated ${updatedDeps.length}` : ''} ${noun}`,
+      description: `Dependency modifications: ${detailList.slice(0, 5).join(', ')}${detailList.length > 5 ? ` and ${detailList.length - 5} more` : ''}`,
       evidenceTier: 'OBSERVED',
       severity: 'INFO',
     });
