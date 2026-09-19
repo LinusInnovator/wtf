@@ -38,8 +38,16 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
       stagedOnly = true;
     } else if (arg === '--commit' || arg === '-c') {
       commit = args[++i];
+      if (!commit) {
+        console.error('Error: --commit requires a commit reference');
+        process.exit(1);
+      }
     } else if (arg === '--range' || arg === '-r') {
       range = args[++i];
+      if (!range) {
+        console.error('Error: --range requires a revision range');
+        process.exit(1);
+      }
     } else if (arg.includes('..')) {
       range = arg;
     } else if (arg === 'init-agent') {

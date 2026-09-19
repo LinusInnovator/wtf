@@ -1,7 +1,5 @@
-import { execSync } from 'node:child_process';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import type { AnalyzeOptions, FilePatch, Finding } from '../types.js';
+import { isPathInside, safeGit, safeReadRepoFile, sanitizeGitRef } from '../core/security.js';
 
 export function detectDependencyChanges(
   patches: FilePatch[],
@@ -18,65 +16,64 @@ export function detectDependencyChanges(
 
   const pkgPatch = patches.find((p) => p.path.endsWith('package.json'));
 
-  if (pkgPatch && repoRoot) {
+  if (pkgPatch && repoRoot && isPathInside(repoRoot, pkgPatch.path)) {
     try {
-      const fullPath = path.join(repoRoot, pkgPatch.path);
       let newPkg: any = {};
       let oldPkg: any = {};
 
       if (options.commit) {
-        try {
-          const newContent = execSync(`git show ${options.commit}:${pkgPatch.path}`, {
-            cwd: repoRoot,
-            stdio: ['pipe', 'pipe', 'pipe'],
-            encoding: 'utf-8',
-          });
-          newPkg = JSON.parse(newContent);
-        } catch {
-          if (fs.existsSync(fullPath)) newPkg = JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
+        const safeCommit = sanitizeGitRef(options.commit);
+        const newRes = safeGit(['show', `${safeCommit}:${pkgPatch.path}`], repoRoot);
+        if (newRes.status === 0) {
+          try {
+            newPkg = JSON.parse(newRes.stdout);
+          } catch {}
+        } else {
+          const content = safeReadRepoFile(repoRoot, pkgPatch.path);
+          if (content) {
+            try {
+              newPkg = JSON.parse(content);
+            } catch {}
+          }
         }
 
-        try {
-          const oldContent = execSync(`git show ${options.commit}^1:${pkgPatch.path}`, {
-            cwd: repoRoot,
-            stdio: ['pipe', 'pipe', 'pipe'],
-            encoding: 'utf-8',
-          });
-          oldPkg = JSON.parse(oldContent);
-        } catch {
-          oldPkg = {};
+        const oldRes = safeGit(['show', `${safeCommit}^1:${pkgPatch.path}`], repoRoot);
+        if (oldRes.status === 0) {
+          try {
+            oldPkg = JSON.parse(oldRes.stdout);
+          } catch {}
         }
       } else if (options.range && options.range.includes('..')) {
         const [rev1, rev2] = options.range.split('..');
-        try {
-          const newContent = execSync(`git show ${rev2 || 'HEAD'}:${pkgPatch.path}`, {
-            cwd: repoRoot,
-            stdio: ['pipe', 'pipe', 'pipe'],
-            encoding: 'utf-8',
-          });
-          newPkg = JSON.parse(newContent);
-        } catch {}
-        try {
-          const oldContent = execSync(`git show ${rev1}:${pkgPatch.path}`, {
-            cwd: repoRoot,
-            stdio: ['pipe', 'pipe', 'pipe'],
-            encoding: 'utf-8',
-          });
-          oldPkg = JSON.parse(oldContent);
-        } catch {}
-      } else {
-        if (fs.existsSync(fullPath)) {
-          newPkg = JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
+        const safeRev1 = sanitizeGitRef(rev1);
+        const safeRev2 = sanitizeGitRef(rev2 || 'HEAD');
+
+        const newRes = safeGit(['show', `${safeRev2}:${pkgPatch.path}`], repoRoot);
+        if (newRes.status === 0) {
+          try {
+            newPkg = JSON.parse(newRes.stdout);
+          } catch {}
         }
-        try {
-          const oldContent = execSync(`git show HEAD:${pkgPatch.path}`, {
-            cwd: repoRoot,
-            stdio: ['pipe', 'pipe', 'pipe'],
-            encoding: 'utf-8',
-          });
-          oldPkg = JSON.parse(oldContent);
-        } catch {
-          oldPkg = {};
+
+        const oldRes = safeGit(['show', `${safeRev1}:${pkgPatch.path}`], repoRoot);
+        if (oldRes.status === 0) {
+          try {
+            oldPkg = JSON.parse(oldRes.stdout);
+          } catch {}
+        }
+      } else {
+        const content = safeReadRepoFile(repoRoot, pkgPatch.path);
+        if (content) {
+          try {
+            newPkg = JSON.parse(content);
+          } catch {}
+        }
+
+        const oldRes = safeGit(['show', `HEAD:${pkgPatch.path}`], repoRoot);
+        if (oldRes.status === 0) {
+          try {
+            oldPkg = JSON.parse(oldRes.stdout);
+          } catch {}
         }
       }
 
@@ -107,38 +104,30 @@ export function detectDependencyChanges(
 
   // Cargo.toml check
   const cargoPatch = patches.find((p) => p.path.endsWith('Cargo.toml'));
-  if (cargoPatch && repoRoot) {
+  if (cargoPatch && repoRoot && isPathInside(repoRoot, cargoPatch.path)) {
     try {
-      const fullPath = path.join(repoRoot, cargoPatch.path);
       let newContent = '';
       let oldContent = '';
 
       if (options.commit) {
-        try {
-          newContent = execSync(`git show ${options.commit}:${cargoPatch.path}`, {
-            cwd: repoRoot,
-            stdio: ['pipe', 'pipe', 'pipe'],
-            encoding: 'utf-8',
-          });
-        } catch {
-          if (fs.existsSync(fullPath)) newContent = fs.readFileSync(fullPath, 'utf-8');
+        const safeCommit = sanitizeGitRef(options.commit);
+        const newRes = safeGit(['show', `${safeCommit}:${cargoPatch.path}`], repoRoot);
+        if (newRes.status === 0) {
+          newContent = newRes.stdout;
+        } else {
+          newContent = safeReadRepoFile(repoRoot, cargoPatch.path) || '';
         }
-        try {
-          oldContent = execSync(`git show ${options.commit}^1:${cargoPatch.path}`, {
-            cwd: repoRoot,
-            stdio: ['pipe', 'pipe', 'pipe'],
-            encoding: 'utf-8',
-          });
-        } catch {}
+
+        const oldRes = safeGit(['show', `${safeCommit}^1:${cargoPatch.path}`], repoRoot);
+        if (oldRes.status === 0) {
+          oldContent = oldRes.stdout;
+        }
       } else {
-        if (fs.existsSync(fullPath)) newContent = fs.readFileSync(fullPath, 'utf-8');
-        try {
-          oldContent = execSync(`git show HEAD:${cargoPatch.path}`, {
-            cwd: repoRoot,
-            stdio: ['pipe', 'pipe', 'pipe'],
-            encoding: 'utf-8',
-          });
-        } catch {}
+        newContent = safeReadRepoFile(repoRoot, cargoPatch.path) || '';
+        const oldRes = safeGit(['show', `HEAD:${cargoPatch.path}`], repoRoot);
+        if (oldRes.status === 0) {
+          oldContent = oldRes.stdout;
+        }
       }
 
       const extractCargoDeps = (toml: string) => {

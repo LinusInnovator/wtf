@@ -1,7 +1,6 @@
-import { execSync, spawnSync } from 'node:child_process';
-import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { isBinaryPath, isMechanicalPath } from './classifier.js';
+import { isPathInside, safeGit, safeReadRepoFile, sanitizeGitRef } from './security.js';
 import type { AnalyzeOptions, ChangeSummary, DiffHunk, FileDiffStat, FilePatch } from '../types.js';
 
 export interface GitContext {
@@ -14,45 +13,29 @@ export interface GitContext {
 
 export function getGitContext(cwd: string = process.cwd()): GitContext {
   try {
-    const isInsideWorkTree = execSync('git rev-parse --is-inside-work-tree', {
-      cwd,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      encoding: 'utf-8',
-    }).trim() === 'true';
-
-    if (!isInsideWorkTree) {
+    const isInsideWorkTree = safeGit(['rev-parse', '--is-inside-work-tree'], cwd);
+    if (isInsideWorkTree.status !== 0 || isInsideWorkTree.stdout.trim() !== 'true') {
       return { isRepo: false, root: cwd, hasCommits: false };
     }
 
-    const root = execSync('git rev-parse --show-toplevel', {
-      cwd,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      encoding: 'utf-8',
-    }).trim();
+    const rootRes = safeGit(['rev-parse', '--show-toplevel'], cwd);
+    if (rootRes.status !== 0 || !rootRes.stdout.trim()) {
+      return { isRepo: false, root: cwd, hasCommits: false };
+    }
+    const root = rootRes.stdout.trim();
 
     let branch: string | undefined;
-    try {
-      const b = execSync('git branch --show-current', {
-        cwd: root,
-        stdio: ['pipe', 'pipe', 'pipe'],
-        encoding: 'utf-8',
-      }).trim();
-      if (b) branch = b;
-    } catch {
-      // Detached head or older git
+    const branchRes = safeGit(['branch', '--show-current'], root);
+    if (branchRes.status === 0 && branchRes.stdout.trim()) {
+      branch = branchRes.stdout.trim();
     }
 
     let headSha: string | undefined;
     let hasCommits = false;
-    try {
-      headSha = execSync('git rev-parse --short HEAD', {
-        cwd: root,
-        stdio: ['pipe', 'pipe', 'pipe'],
-        encoding: 'utf-8',
-      }).trim();
+    const headRes = safeGit(['rev-parse', '--short', 'HEAD'], root);
+    if (headRes.status === 0 && headRes.stdout.trim()) {
+      headSha = headRes.stdout.trim();
       hasCommits = true;
-    } catch {
-      hasCommits = false;
     }
 
     return { isRepo: true, root, branch, headSha, hasCommits };
@@ -69,11 +52,8 @@ export interface RawGitStatus {
 
 export function getGitStatus(cwd: string): RawGitStatus {
   try {
-    const out = execSync('git status --porcelain', {
-      cwd,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      encoding: 'utf-8',
-    });
+    const res = safeGit(['status', '--porcelain'], cwd);
+    const out = res.stdout;
 
     const staged: string[] = [];
     const unstaged: string[] = [];
@@ -191,12 +171,9 @@ export function getUntrackedFilePatches(root: string, untrackedFiles: string[]):
   const patches: FilePatch[] = [];
 
   for (const relPath of untrackedFiles) {
-    const fullPath = path.join(root, relPath);
-    if (!fs.existsSync(fullPath)) continue;
+    if (!isPathInside(root, relPath)) continue;
 
     try {
-      const stat = fs.statSync(fullPath);
-      if (stat.isDirectory()) continue;
       if (isBinaryPath(relPath)) {
         patches.push({
           path: relPath,
@@ -209,7 +186,9 @@ export function getUntrackedFilePatches(root: string, untrackedFiles: string[]):
         continue;
       }
 
-      const content = fs.readFileSync(fullPath, 'utf-8');
+      const content = safeReadRepoFile(root, relPath);
+      if (content === null) continue;
+
       const lines = content.split('\n');
       const { isMechanical } = isMechanicalPath(relPath);
 
@@ -249,32 +228,29 @@ export function collectPatches(
   const root = ctx.root;
   const status = getGitStatus(root);
 
-  let diffCmd: string;
+  let gitArgs: string[];
 
   if (options.range) {
-    diffCmd = `git diff ${options.range}`;
+    const safeRange = sanitizeGitRef(options.range);
+    gitArgs = ['diff', safeRange];
   } else if (options.commit) {
-    diffCmd = `git show --format="" -m --first-parent ${options.commit}`;
+    const safeCommit = sanitizeGitRef(options.commit);
+    gitArgs = ['show', '--format=', '-m', '--first-parent', safeCommit];
   } else if (options.stagedOnly) {
-    diffCmd = `git diff --cached`;
+    gitArgs = ['diff', '--cached'];
   } else if (ctx.hasCommits) {
     // Shows all working tree and index changes against HEAD
-    diffCmd = `git diff HEAD`;
+    gitArgs = ['diff', 'HEAD'];
   } else {
     // No commits yet: diff cached if any
-    diffCmd = `git diff --cached`;
+    gitArgs = ['diff', '--cached'];
   }
 
   let diffOutput = '';
   try {
-    diffOutput = execSync(diffCmd, {
-      cwd: root,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      encoding: 'utf-8',
-      maxBuffer: 50 * 1024 * 1024, // 50MB
-    });
+    const res = safeGit(gitArgs, root);
+    diffOutput = res.stdout;
   } catch (err: any) {
-    // In case of empty repo with no commits and no cached diff
     diffOutput = '';
   }
 

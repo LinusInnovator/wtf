@@ -1,4 +1,5 @@
 import type { FilePatch, Finding } from '../types.js';
+import { truncateLineForRegex } from '../core/security.js';
 
 export function detectWorkflowChanges(patches: FilePatch[]): {
   findings: Finding[];
@@ -20,8 +21,9 @@ export function detectWorkflowChanges(patches: FilePatch[]): {
       let hasPullRequestTarget = false;
 
       for (const hunk of patch.hunks) {
-        for (const line of hunk.lines) {
-          if (line.startsWith('+')) {
+        for (const rawLine of hunk.lines) {
+          if (rawLine.startsWith('+')) {
+            const line = truncateLineForRegex(rawLine);
             if (/secrets\.[A-Z0-9_]+/i.test(line)) {
               hasSecretReference = true;
             }

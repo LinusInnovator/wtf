@@ -1,4 +1,5 @@
 import type { FilePatch, Finding } from '../types.js';
+import { truncateLineForRegex } from '../core/security.js';
 
 const MIGRATION_PATH_PATTERNS = [
   /migration/i,
@@ -28,7 +29,7 @@ export function detectDatabaseChanges(patches: FilePatch[]): Finding[] {
 
       for (const line of hunk.lines) {
         if (line.startsWith('+') && !line.startsWith('+++')) {
-          const content = line.slice(1).trim();
+          const content = truncateLineForRegex(line.slice(1).trim());
 
           // Destructive SQL operations
           if (/DROP\s+(TABLE|COLUMN|DATABASE|VIEW|INDEX)/i.test(content)) {

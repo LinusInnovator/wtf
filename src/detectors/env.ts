@@ -1,4 +1,5 @@
 import type { FilePatch, Finding } from '../types.js';
+import { truncateLineForRegex } from '../core/security.js';
 
 export function detectEnvironmentChanges(patches: FilePatch[]): {
   findings: Finding[];
@@ -17,7 +18,7 @@ export function detectEnvironmentChanges(patches: FilePatch[]): {
 
       for (const line of hunk.lines) {
         if (line.startsWith('+') && !line.startsWith('+++')) {
-          const content = line.slice(1).trim();
+          const content = truncateLineForRegex(line.slice(1).trim());
 
           if (isEnvFile) {
             const match = content.match(/^([A-Z0-9_]+)\s*=/);

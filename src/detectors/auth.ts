@@ -1,4 +1,5 @@
 import type { FilePatch, Finding } from '../types.js';
+import { truncateLineForRegex } from '../core/security.js';
 
 const AUTH_PATH_PATTERNS = [
   /(^|\/)auth/i,
@@ -31,7 +32,7 @@ export function detectAuthChanges(patches: FilePatch[]): Finding[] {
 
       for (const line of hunk.lines) {
         if (line.startsWith('+') && !line.startsWith('+++')) {
-          const content = line.slice(1).trim();
+          const content = truncateLineForRegex(line.slice(1).trim());
 
           // Session expiry / timeout
           if (

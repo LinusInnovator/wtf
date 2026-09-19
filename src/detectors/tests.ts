@@ -1,4 +1,5 @@
 import type { FilePatch, Finding } from '../types.js';
+import { truncateLineForRegex } from '../core/security.js';
 
 export function detectTestChanges(patches: FilePatch[]): {
   findings: Finding[];
@@ -29,7 +30,7 @@ export function detectTestChanges(patches: FilePatch[]): {
 
       for (const line of hunk.lines) {
         if (line.startsWith('+') && !line.startsWith('+++')) {
-          const content = line.slice(1).trim();
+          const content = truncateLineForRegex(line.slice(1).trim());
 
           // Skipped / disabled tests (only in test files or source files)
           const isSkipped =

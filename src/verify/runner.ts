@@ -1,6 +1,7 @@
-import { execSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { isPathInside, safeReadRepoFile } from '../core/security.js';
 import type { VerificationItem } from '../types.js';
 
 export interface DiscoveredTarget {
@@ -13,10 +14,10 @@ export function discoverVerificationTargets(repoRoot: string): DiscoveredTarget[
   const targets: DiscoveredTarget[] = [];
 
   // 1. Node.js / package.json
-  const pkgPath = path.join(repoRoot, 'package.json');
-  if (fs.existsSync(pkgPath)) {
+  const pkgContent = safeReadRepoFile(repoRoot, 'package.json');
+  if (pkgContent) {
     try {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+      const pkg = JSON.parse(pkgContent);
       const scripts = pkg.scripts || {};
 
       // Determine package manager
