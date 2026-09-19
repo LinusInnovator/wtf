@@ -1,0 +1,42 @@
+{
+  "name": "agent-wtf",
+  "version": "0.1.0",
+  "description": "See what changed, what actually worked, and what deserves human/agent attention.",
+  "type": "module",
+  "bin": {
+    "wtf": "./bin/wtf.js",
+    "agent-wtf": "./bin/wtf.js"
+  },
+  "main": "./dist/cli.js",
+  "scripts": {
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node18 --outfile=dist/cli.js",
+    "prepublishOnly": "npm run build && npm test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "gauntlet": "vitest run test/gauntlet.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "git",
+    "cli",
+    "developer-tools",
+    "ai-agents",
+    "code-review",
+    "verification",
+    "claude-code",
+    "cursor",
+    "copilot",
+    "diff"
+  ],
+  "author": "WTF Contributors",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
