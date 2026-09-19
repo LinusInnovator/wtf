@@ -189,7 +189,7 @@ WTF does not claim to catch every bug or replace human judgment. It eliminates t
 ## Contributing
 
 ```bash
-git clone https://github.com/agent-wtf/wtf.git
+git clone https://github.com/LinusInnovator/wtf.git
 cd wtf
 npm install
 npm run build

@@ -17,11 +17,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agent-wtf/wtf.git"
+    "url": "git+https://github.com/LinusInnovator/wtf.git"
   },
-  "homepage": "https://github.com/agent-wtf/wtf#readme",
+  "homepage": "https://github.com/LinusInnovator/wtf#readme",
   "bugs": {
-    "url": "https://github.com/agent-wtf/wtf/issues"
+    "url": "https://github.com/LinusInnovator/wtf/issues"
   },
   "scripts": {
     "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node18 --outfile=dist/cli.js",
