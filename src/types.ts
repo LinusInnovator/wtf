@@ -81,6 +81,14 @@ export interface ChangeSummary {
   isClean: boolean;
 }
 
+export interface FileSummary {
+  path: string;
+  added: number;
+  deleted: number;
+  isMechanical: boolean;
+  status: 'added' | 'deleted' | 'modified' | 'renamed' | 'untracked';
+}
+
 export interface WTFReceipt {
   spec: 'wtf/0.1';
   timestamp: string;
@@ -90,6 +98,7 @@ export interface WTFReceipt {
     head?: string;
   };
   change: ChangeSummary;
+  files: FileSummary[];
   payAttention: Finding[];
   also: Finding[];
   verification: VerificationItem[];

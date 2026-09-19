@@ -114,6 +114,14 @@ export function analyzeRepo(
     unknown.push('No test or typecheck runner discovered in repository');
   }
 
+  const files = patches.map((p) => ({
+    path: p.path,
+    added: p.added,
+    deleted: p.deleted,
+    isMechanical: p.isMechanical,
+    status: p.status,
+  }));
+
   const receipt: WTFReceipt = {
     spec: 'wtf/0.1',
     timestamp: new Date().toISOString(),
@@ -123,6 +131,7 @@ export function analyzeRepo(
       head: ctx.headSha,
     },
     change,
+    files,
     payAttention,
     also: alsoFindings,
     verification,

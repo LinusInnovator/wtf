@@ -69,6 +69,25 @@ export function formatTerminal(result: AnalyzeResult): string {
   }
   lines.push('');
 
+  // 2. FILES Section (compact changed files list)
+  if (!change.isClean && receipt.files && receipt.files.length > 0) {
+    lines.push(`${c.bold}FILES${c.reset}`);
+    const displayFiles = receipt.files.slice(0, 6);
+    for (const f of displayFiles) {
+      const icon = f.status === 'added' ? `${c.green}+${c.reset}` : f.status === 'deleted' ? `${c.red}-${c.reset}` : `${c.cyan}•${c.reset}`;
+      if (f.isMechanical) {
+        lines.push(`  ${icon} ${c.dim}${f.path.padEnd(35)} [mechanical · +${f.added}/-${f.deleted}]${c.reset}`);
+      } else {
+        const stats = `${c.green}+${f.added}${c.reset}/${c.red}-${f.deleted}${c.reset}`;
+        lines.push(`  ${icon} ${f.path.padEnd(35)} ${c.dim}${stats}${c.reset}`);
+      }
+    }
+    if (receipt.files.length > 6) {
+      lines.push(`  ${c.dim}... and ${receipt.files.length - 6} more files. Run \`wtf show\` for full list.${c.reset}`);
+    }
+    lines.push('');
+  }
+
   // 2. PAY ATTENTION Section (if any high-importance findings)
   if (payAttention.length > 0) {
     lines.push(`${c.bold}${c.yellow}PAY ATTENTION${c.reset}`);
