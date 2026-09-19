@@ -8,6 +8,7 @@ import {
   safeGit,
   safeReadRepoFile,
   truncateLineForRegex,
+  sanitizeForTerminal,
 } from '../src/core/security.js';
 import { analyzeRepo } from '../src/core/evidence.js';
 import { detectAuthChanges } from '../src/detectors/auth.js';
@@ -15,7 +16,7 @@ import { detectDatabaseChanges } from '../src/detectors/db.js';
 import { detectHygieneIssues } from '../src/detectors/hygiene.js';
 import type { FilePatch } from '../src/types.js';
 
-describe('Security & Hardening Audit (AAA Rating)', () => {
+describe('Security & Hardening Audit', () => {
   describe('Git Reference Sanitization & Flag Injection Prevention', () => {
     it('allows valid git SHAs and branches', () => {
       expect(sanitizeGitRef('main')).toBe('main');
@@ -79,6 +80,27 @@ describe('Security & Hardening Audit (AAA Rating)', () => {
       expect(isPathInside(root, 'subdir/../../../../etc/shadow')).toBe(false);
     });
 
+    it('blocks symlinks pointing outside the repository', () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wtf-symlink-test-'));
+      const outsideFile = path.join(os.tmpdir(), 'outside-secret.env');
+      fs.writeFileSync(outsideFile, 'SECRET_KEY=12345');
+
+      const linkPath = path.join(tempDir, 'symlink-to-outside');
+      try {
+        fs.symlinkSync(outsideFile, linkPath);
+
+        // isPathInside must detect that link target escapes tempDir
+        expect(isPathInside(tempDir, 'symlink-to-outside')).toBe(false);
+
+        // safeReadRepoFile must refuse to read the symlink
+        const content = safeReadRepoFile(tempDir, 'symlink-to-outside');
+        expect(content).toBeNull();
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        if (fs.existsSync(outsideFile)) fs.unlinkSync(outsideFile);
+      }
+    });
+
     it('safeReadRepoFile strictly refuses to read files outside repo', () => {
       const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wtf-sec-test-'));
       const outsideFile = path.join(os.tmpdir(), 'secret-outside.txt');
@@ -91,6 +113,74 @@ describe('Security & Hardening Audit (AAA Rating)', () => {
         fs.rmSync(tempDir, { recursive: true, force: true });
         if (fs.existsSync(outsideFile)) fs.unlinkSync(outsideFile);
       }
+    });
+  });
+
+  describe('Malicious Git Configuration Neutralization', () => {
+    it('neutralizes malicious diff.external and core.fsmonitor', () => {
+      const tempRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'wtf-git-config-test-'));
+      const markerFile = path.join(os.tmpdir(), 'wtf-pwned-marker.txt');
+      if (fs.existsSync(markerFile)) fs.unlinkSync(markerFile);
+
+      try {
+        // Initialize git repo
+        safeGit(['init'], tempRepo);
+        safeGit(['config', 'user.email', 'test@example.com'], tempRepo);
+        safeGit(['config', 'user.name', 'Test'], tempRepo);
+
+        // Configure malicious fsmonitor and diff driver
+        safeGit(['config', 'core.fsmonitor', `touch "${markerFile}" && false`], tempRepo);
+        safeGit(['config', 'diff.external', `touch "${markerFile}" && false`], tempRepo);
+
+        // Create a file and commit
+        fs.writeFileSync(path.join(tempRepo, 'file.txt'), 'line 1\n');
+        safeGit(['add', '.'], tempRepo);
+        safeGit(['commit', '-m', 'init'], tempRepo);
+
+        // Modify file
+        fs.writeFileSync(path.join(tempRepo, 'file.txt'), 'line 1\nline 2\n');
+
+        // Execute safeGit status and diff
+        safeGit(['status', '--porcelain'], tempRepo);
+        safeGit(['diff', 'HEAD'], tempRepo);
+
+        // Verify marker file was NEVER created
+        expect(fs.existsSync(markerFile)).toBe(false);
+      } finally {
+        fs.rmSync(tempRepo, { recursive: true, force: true });
+        if (fs.existsSync(markerFile)) fs.unlinkSync(markerFile);
+      }
+    });
+  });
+
+  describe('Terminal Injection & Control Sequence Sanitization', () => {
+    it('strips ANSI cursor escape sequences and line clear codes', () => {
+      const malicious = '\x1b[3A\x1b[2K✓ tests passed\x1b[0m';
+      const sanitized = sanitizeForTerminal(malicious);
+      expect(sanitized).toBe('✓ tests passed');
+      expect(sanitized.includes('\x1b')).toBe(false);
+    });
+
+    it('strips OSC hyperlink and title sequences', () => {
+      const oscHyperlink = '\x1b]8;;http://evil.com\x07Click\x1b]8;;\x07';
+      const sanitized = sanitizeForTerminal(oscHyperlink);
+      expect(sanitized).toBe('Click');
+      expect(sanitized.includes('evil.com')).toBe(false);
+    });
+
+    it('strips Unicode Bidi override characters (Trojan Source)', () => {
+      // \u202E is Right-to-Left Override
+      const bidiMalicious = 'access_level = "user"\u202E; // admin check';
+      const sanitized = sanitizeForTerminal(bidiMalicious);
+      expect(sanitized).toBe('access_level = "user"; // admin check');
+      expect(sanitized.includes('\u202E')).toBe(false);
+    });
+
+    it('strips carriage returns that could overwrite lines', () => {
+      const crMalicious = 'PAY ATTENTION\rFAKE VERIFIED';
+      const sanitized = sanitizeForTerminal(crMalicious);
+      expect(sanitized).toBe('PAY ATTENTIONFAKE VERIFIED');
+      expect(sanitized.includes('\r')).toBe(false);
     });
   });
 

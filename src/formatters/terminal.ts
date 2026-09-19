@@ -1,4 +1,5 @@
 import type { AnalyzeResult } from '../core/evidence.js';
+import { sanitizeForTerminal } from '../core/security.js';
 
 // ANSI color helpers with NO_COLOR support
 const useColor = !process.env.NO_COLOR && process.stdout.isTTY !== false;
@@ -45,24 +46,24 @@ export function formatTerminal(result: AnalyzeResult): string {
     if (!hasRun) {
       lines.push(`  ${c.gray}○ Tests not yet run · Run ${c.reset}${c.cyan}wtf verify${c.reset}${c.gray} to validate${c.reset}`);
       for (const v of verification) {
-        lines.push(`    ${c.dim}${v.name}${c.reset} ${c.gray}(${v.command})${c.reset}`);
+        lines.push(`    ${c.dim}${sanitizeForTerminal(v.name)}${c.reset} ${c.gray}(${sanitizeForTerminal(v.command)})${c.reset}`);
       }
     } else {
       for (const v of verification) {
         if (v.status === 'PASSED') {
-          const summaryStr = v.summary ? `       ${v.summary}` : '';
+          const summaryStr = v.summary ? `       ${sanitizeForTerminal(v.summary)}` : '';
           const durationStr = v.durationMs ? ` ${c.gray}(${v.durationMs}ms)${c.reset}` : '';
-          lines.push(`  ${c.green}✓${c.reset} ${v.name.padEnd(11)}${summaryStr}${durationStr}`);
+          lines.push(`  ${c.green}✓${c.reset} ${sanitizeForTerminal(v.name).padEnd(11)}${summaryStr}${durationStr}`);
         } else if (v.status === 'FAILED') {
-          lines.push(`  ${c.red}✗${c.reset} ${v.name.padEnd(11)} ${c.red}FAILED${c.reset}`);
+          lines.push(`  ${c.red}✗${c.reset} ${sanitizeForTerminal(v.name).padEnd(11)} ${c.red}FAILED${c.reset}`);
           if (v.details) {
             const detailLines = v.details.split('\n').slice(0, 3);
             for (const dl of detailLines) {
-              lines.push(`    ${c.dim}${dl}${c.reset}`);
+              lines.push(`    ${c.dim}${sanitizeForTerminal(dl)}${c.reset}`);
             }
           }
         } else {
-          lines.push(`  ${c.gray}○${c.reset} ${v.name.padEnd(11)} ${c.gray}skipped${c.reset}`);
+          lines.push(`  ${c.gray}○${c.reset} ${sanitizeForTerminal(v.name).padEnd(11)} ${c.gray}skipped${c.reset}`);
         }
       }
     }
@@ -75,11 +76,12 @@ export function formatTerminal(result: AnalyzeResult): string {
     const displayFiles = receipt.files.slice(0, 6);
     for (const f of displayFiles) {
       const icon = f.status === 'added' ? `${c.green}+${c.reset}` : f.status === 'deleted' ? `${c.red}-${c.reset}` : `${c.cyan}•${c.reset}`;
+      const safePath = sanitizeForTerminal(f.path);
       if (f.isMechanical) {
-        lines.push(`  ${icon} ${c.dim}${f.path.padEnd(35)} [mechanical · +${f.added}/-${f.deleted}]${c.reset}`);
+        lines.push(`  ${icon} ${c.dim}${safePath.padEnd(35)} [mechanical · +${f.added}/-${f.deleted}]${c.reset}`);
       } else {
         const stats = `${c.green}+${f.added}${c.reset}/${c.red}-${f.deleted}${c.reset}`;
-        lines.push(`  ${icon} ${f.path.padEnd(35)} ${c.dim}${stats}${c.reset}`);
+        lines.push(`  ${icon} ${safePath.padEnd(35)} ${c.dim}${stats}${c.reset}`);
       }
     }
     if (receipt.files.length > 6) {
@@ -94,14 +96,14 @@ export function formatTerminal(result: AnalyzeResult): string {
     payAttention.slice(0, 5).forEach((f, idx) => {
       const num = `${idx + 1}.`;
       const catColor = f.severity === 'CRITICAL' ? c.red : c.yellow;
-      lines.push(`  ${num} ${catColor}${c.bold}${f.category}${c.reset}`);
-      lines.push(`     ${f.title}`);
+      lines.push(`  ${num} ${catColor}${c.bold}${sanitizeForTerminal(f.category)}${c.reset}`);
+      lines.push(`     ${sanitizeForTerminal(f.title)}`);
       if (f.file) {
         const lineInfo = f.line ? `:${f.line}` : '';
-        lines.push(`     ${c.dim}${f.file}${lineInfo}${c.reset}`);
+        lines.push(`     ${c.dim}${sanitizeForTerminal(f.file)}${lineInfo}${c.reset}`);
       }
       if (f.snippet) {
-        lines.push(`     ${c.gray}> ${f.snippet.slice(0, 75)}${c.reset}`);
+        lines.push(`     ${c.gray}> ${sanitizeForTerminal(f.snippet).slice(0, 75)}${c.reset}`);
       }
     });
     if (payAttention.length > 5) {

@@ -169,8 +169,10 @@ export function parseUnifiedDiff(diffOutput: string): FilePatch[] {
 
 export function getUntrackedFilePatches(root: string, untrackedFiles: string[]): FilePatch[] {
   const patches: FilePatch[] = [];
+  // Cap max untracked files processed to bound CPU and memory
+  const filesToProcess = untrackedFiles.slice(0, 500);
 
-  for (const relPath of untrackedFiles) {
+  for (const relPath of filesToProcess) {
     if (!isPathInside(root, relPath)) continue;
 
     try {
@@ -232,18 +234,18 @@ export function collectPatches(
 
   if (options.range) {
     const safeRange = sanitizeGitRef(options.range);
-    gitArgs = ['diff', safeRange];
+    gitArgs = ['diff', '--no-ext-diff', '--no-textconv', safeRange, '--'];
   } else if (options.commit) {
     const safeCommit = sanitizeGitRef(options.commit);
-    gitArgs = ['show', '--format=', '-m', '--first-parent', safeCommit];
+    gitArgs = ['show', '--no-ext-diff', '--no-textconv', '--format=', '-m', '--first-parent', safeCommit, '--'];
   } else if (options.stagedOnly) {
-    gitArgs = ['diff', '--cached'];
+    gitArgs = ['diff', '--no-ext-diff', '--no-textconv', '--cached', '--'];
   } else if (ctx.hasCommits) {
     // Shows all working tree and index changes against HEAD
-    gitArgs = ['diff', 'HEAD'];
+    gitArgs = ['diff', '--no-ext-diff', '--no-textconv', 'HEAD', '--'];
   } else {
     // No commits yet: diff cached if any
-    gitArgs = ['diff', '--cached'];
+    gitArgs = ['diff', '--no-ext-diff', '--no-textconv', '--cached', '--'];
   }
 
   let diffOutput = '';

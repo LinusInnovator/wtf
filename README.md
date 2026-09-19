@@ -1,7 +1,7 @@
 # WTF
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Security: AAA](https://img.shields.io/badge/Security-AAA-brightgreen.svg)](SECURITY.md)
+[![Security Policy](https://img.shields.io/badge/Security-Policy-blue.svg)](SECURITY.md)
 [![Zero Dependencies](https://img.shields.io/badge/Dependencies-0-success.svg)](#wtf-doesnt-need-your-code)
 [![Gauntlet: 100/100](https://img.shields.io/badge/Gauntlet-100%2F100-brightgreen.svg)](#contributing)
 
@@ -155,10 +155,12 @@ wtf init-agent
 - **Runs 100% locally**: Zero code or diffs ever leave your machine.
 - **Zero network calls**: Works completely offline.
 - **Zero telemetry**: No tracking, analytics, or background pings.
-- **Zero runtime dependencies**: Pure, self-contained ESM bundle with 0 dependencies.
-- **Zero shell evaluation**: Git commands run directly via isolated binary execution (`shell: false`), immune to shell injection.
+- **Zero runtime dependencies**: Pure ESM package with 0 runtime dependencies, reducing third-party supply-chain exposure.
+- **No shell evaluation for Git**: Git commands run directly via isolated binary execution (`shell: false`) with strict argument sanitization and overrides for external diff/fsmonitor drivers.
+- **Symlink & path containment**: File operations enforce realpath containment to prevent reading files outside the repository boundary.
+- **Terminal output sanitization**: Strips ANSI cursor escapes, OSC sequences, and Unicode Bidi overrides from untrusted inputs before printing.
 - **No account or API key**: No signup, no LLM tokens, no monthly bill.
-- **Read-only by default**: `wtf` never modifies files or runs code. `wtf verify` only executes standard project test scripts when you explicitly ask it to.
+- **Read-only by default**: `wtf` never modifies files or runs code. `wtf verify` discovers and runs project test suites directly with local user permissions without an internal sandbox; only run verification on code you trust to execute.
 
 ---
 
