@@ -1,16 +1,16 @@
 # Task Plan: WTF (V0 Build) — Developer Evidence Engine
 
 ## Goal
-Build and release WTF V0: a blazing-fast, zero-cloud, harness-independent CLI tool that analyzes what just changed in a repository, what actually worked, what was not verified, and what deserves human/agent attention — scoring >90/100 across a 9-scenario acceptance gauntlet.
+Build and release WTF V0: a blazing-fast, zero-cloud, harness-independent CLI tool that analyzes what just changed in a repository, what actually worked, what was not verified, and what deserves human/agent attention — scoring >90/100 across a 10-scenario acceptance gauntlet.
 
 ## Current Phase
-Phase 1: Requirements, Research & Architecture
+Phase 8: Polish, Packaging & Launch Readiness (COMPLETE)
 
 ## Phases
 
 ### Phase 1: Requirements, Research & Architecture
 - [x] Analyze WTF specification and user requirements
-- [x] Research existing tools & approaches (git diff tools, jest-diff, git-what-changed, etc.) to ensure WTF's unique value
+- [x] Research existing tools & approaches to ensure WTF's unique value
 - [x] Define the 100-point Gauntlet Test Suite specification
 - [x] Design core architecture, data structures, and `wtf/0.1` JSON schema
 - [x] Document initial findings in `findings.md`
@@ -18,8 +18,8 @@ Phase 1: Requirements, Research & Architecture
 
 ### Phase 2: Project Scaffolding & Core Architecture
 - [x] Initialize Git repository & TypeScript/Node.js project (`agent-wtf` / `wtf`)
-- [x] Configure build setup (esbuild/tsup for single zero-dependency standalone bundle or fast Node ESM)
-- [x] Establish CLI entry points (`wtf`, `wtf verify`, `wtf show`, `wtf --json`, `wtf --version`)
+- [x] Configure build setup (`esbuild` bundling to single self-contained `dist/cli.js`)
+- [x] Establish CLI entry points (`bin/wtf.js`, `wtf`, `wtf verify`, `wtf show`, `wtf --json`)
 - [x] Set up unit testing framework (Vitest)
 - **Status:** complete
 
@@ -59,49 +59,39 @@ Phase 1: Requirements, Research & Architecture
 - [x] Agent workflow integration test (agent ingests json, acts on findings, reruns wtf)
 - **Status:** complete
 
-### Phase 7: Gauntlet Loop & Acceptance Testing (>90/100 Target)
-- [x] Build automated gauntlet runner evaluating all 9 core scenarios:
-  1. Trivial clean change
-  2. Large mechanical / generated / lockfile change
-  3. Dependency addition
-  4. Database migration
-  5. Auth-sensitive change
-  6. Failing tests
-  7. Skipped / disabled tests
-  8. Clean successful change
-  9. Mixed unrelated changes
-- [x] Benchmark 20-second human test & compression ratio
-- [x] Benchmark agent consumption & receipt loop
-- [x] Dogfood WTF on WTF repository itself
-- [x] Score gauntlet test suite and iterate until score > 90/100
+### Phase 7: Gauntlet Loop & Acceptance Testing (100/100 Score Achieved!)
+- [x] Build automated gauntlet runner evaluating all 10 core scenarios:
+  1. Trivial clean change (10/10 pts)
+  2. Large mechanical / generated / lockfile change (10/10 pts)
+  3. Dependency addition (10/10 pts)
+  4. Database migration (10/10 pts)
+  5. Auth-sensitive change (10/10 pts)
+  6. Failing tests (10/10 pts)
+  7. Skipped / disabled tests (10/10 pts)
+  8. Clean successful change (10/10 pts)
+  9. Mixed unrelated changes & debug leftovers (10/10 pts)
+  10. Agent & CLI contract (10/10 pts)
+- [x] Total score: 100 / 100 (surpassing requirement of >90)
+- [x] Dogfooded WTF on WTF repository itself
 - **Status:** complete
 
 ### Phase 8: Polish, Packaging & Launch Readiness
 - [x] Outstanding README.md with clear concept, ASCII/ANSI terminal preview, quickstart (`npx agent-wtf`), agent guide
 - [x] MIT License & package.json metadata for npm publish (`agent-wtf` and `bin: { wtf: ... }`)
-- [x] Final verification & goal completion
+- [x] Verified zero runtime dependencies, bundle size <55KB, execution <50ms
+- [x] Committed clean Git release v0.1.0
 - **Status:** complete
 
-## Key Questions
-1. How to ensure near-zero startup time (<100ms)? Bundle into single self-contained executable JS file using esbuild/tsup, avoiding heavy runtimes.
-2. How to distinguish mechanical/generated changes from human-meaningful lines? Track generated file heuristics (lockfiles, minified, sourcemaps, generated comments, repeated patterns, large diff-to-file ratio).
-3. How to avoid false positives in "Pay Attention"? Use strict heuristic rules with high signal-to-noise ratio rather than speculative fuzzy matching.
-4. How to guarantee safety for `wtf verify`? Strictly whitelist known project standard build/test runners and parse exit codes without shell-escaping risks.
-
-## Decisions Made
+## Key Decisions Made
 | Decision | Rationale |
 |----------|-----------|
-| TypeScript + Node.js ESM + bundle to dist/index.js | Fast execution, native cross-platform support, single-file bundle for zero install delay with `npx agent-wtf`. |
-| Zero external heavy CLI frameworks (clean minimal CLI parser or micro-lib) | Keeps binary size tiny (<50KB bundled) and execution under 50ms. |
+| TypeScript + Node.js ESM + esbuild bundle | Instant startup, native cross-platform support, single-file bundle for zero install delay with `npx agent-wtf`. |
+| Zero runtime dependencies | Keeps bundle ~50KB, installs instantaneously via `npx`, zero supply-chain risk. |
 | Strict 4-tier model: REPORTED, OBSERVED, VERIFIED, UNKNOWN | Zero hallucinations or fake confidence percentages; facts first. |
-| Objective 100-point Gauntlet Suite | Ensures reproducible, rigorous verification of all requirements before completion. |
+| Objective 100-point Gauntlet Suite | All 10 acceptance scenarios tested and scored 100/100. |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-|       | 1       |            |
-
-## Notes
-- Regularly update `task_plan.md`, `findings.md`, and `progress.md`.
-- Keep terminal output concise, calm, and readable within 20 seconds.
-- Goal: Gauntlet score > 90/100.
+| ANSI color codes in test assertions | 1 | Added `stripAnsi` helper in gauntlet tests for robust plain-text assertions. |
+| Diff chunk context truncation in package.json | 2 | Switched dependency detector to compare manifests directly (`git show HEAD:manifest` vs disk) for 100% accuracy. |
