@@ -126,37 +126,35 @@ Or install globally:
 npm install -g agent-wtf
 ```
 
-### The 4 Essential Commands
+### The 5 Essential Commands
 
 | Command | What it does |
 | :--- | :--- |
-| `wtf` | See what changed and what needs attention in your working tree. |
-| `wtf show` | View exact diff snippets and line evidence for every finding. |
+| `wtf` | See what changed and what needs attention in your working tree (~50ms). |
+| `wtf init-agent` | Automatically configure your repository for autonomous agent self-auditing. |
 | `wtf verify` | Discover and run your tests/builds to produce an independently verified receipt. |
+| `wtf show` | View exact diff snippets and line evidence for every finding. |
 | `wtf --json` | Machine-readable evidence schema (`wtf/0.1`) for coding agents. |
 
 ---
 
-## Teach Your Agent to Check Itself
+## Make Your Agent Check Itself Autonomously
 
-Agents can consume WTF directly. Add this snippet to your repository's agent instructions (`AGENTS.md`, `CLAUDE.md`, or `.cursorrules`):
-
-```markdown
-## Task Verification with WTF
-Before declaring a coding task complete:
-1. Run `wtf` (or `wtf --json`).
-2. Inspect its findings.
-3. Resolve relevant issues (skipped tests, debug leftovers, auth regressions).
-4. Run `wtf verify` when appropriate.
-5. Never claim code is verified without supporting evidence.
-6. Report meaningful unresolved WTF findings to the human.
-```
-
-Or initialize it automatically in your repo:
+Run this once in any repository:
 
 ```bash
-wtf init-agent
+npx agent-wtf init-agent
 ```
+
+This automatically configures your repository's agent rules (`AGENTS.md`, `CLAUDE.md`, `.cursorrules`, and `.github/copilot-instructions.md`).
+
+From that moment on, whenever Claude Code, Cursor, Copilot, or Cline works in your repo, the agent autonomously:
+1. **Runs WTF** before declaring completion.
+2. **Catches shortcuts**: Detects its own skipped tests (`test.skip`), debug leftovers (`console.log`), and schema risks.
+3. **Executes tests**: Runs `wtf verify` to independently validate your test suite.
+4. **Hands you proof**: Attaches the unforgeable verification receipt directly to its final reply before you review.
+
+*(To view the markdown template without modifying files, pass `npx agent-wtf init-agent --print`).*
 
 ---
 
