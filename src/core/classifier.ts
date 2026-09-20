@@ -65,3 +65,69 @@ export function isBinaryPath(filePath: string): boolean {
   ]);
   return ext ? binaryExtensions.has(ext) : false;
 }
+
+export interface MinimalHunk {
+  lines: string[];
+}
+
+/**
+ * Detects whether changes to agent configuration files (AGENTS.md, CLAUDE.md, etc.)
+ * consist solely of WTF agent completion protocol bootstrapping or instructions.
+ * If user instructions/rules unrelated to WTF are present, returns false.
+ */
+export function isWtfProtocolPatch(filePath: string, hunks: MinimalHunk[]): boolean {
+  const norm = filePath.replace(/\\/g, '/');
+  const isCandidate =
+    /(^|\/)(AGENTS\.md|CLAUDE\.md|\.cursorrules|\.github\/copilot-instructions\.md)$/i.test(norm);
+  if (!isCandidate) return false;
+
+  const addedLines: string[] = [];
+  for (const h of hunks) {
+    for (const l of h.lines) {
+      if (l.startsWith('+') && !l.startsWith('+++')) {
+        const trimmed = l.slice(1).trim();
+        if (trimmed) addedLines.push(trimmed);
+      }
+    }
+  }
+
+  // If no lines were added, this is not a WTF protocol addition
+  if (addedLines.length === 0) return false;
+
+  const wtfKeywords = [
+    'wtf',
+    'agent-wtf',
+    'task completion protocol',
+    'task verification with wtf',
+    'epistemic',
+    'passing checks prove only',
+    'agents act. wtf proves. humans decide',
+    'human decides',
+    'agent implements',
+    'agent thinks it\'s done',
+    'pay attention',
+    'observed',
+    'verified',
+    'unknown',
+  ];
+
+  const isStructuralOrProtocol = (line: string): boolean => {
+    // Strip markdown formatting, heading markers, and symbols like ✓, ✗, ○, •
+    const clean = line.replace(/^[#*\->|`~:\s↓✓✗○•]+/, '').replace(/[*_`]/g, '').trim();
+    if (!clean) return true; // empty or pure punctuation line
+    const lower = clean.toLowerCase();
+    if (wtfKeywords.some((kw) => lower.includes(kw))) return true;
+    if (/^[#*\->|`~:\s↓✓✗○•]+$/.test(line)) return true;
+    if (/^```[a-z]*$/i.test(line)) return true;
+    if (/^[0-9]+\.\s*$/.test(line)) return true;
+    if (/^(agent guidelines|task completion protocol|task verification|how coding agents use|machine contract|protocol rules|schema|output format)/i.test(lower)) return true;
+    if (/^(\d+\.|\*|-)?\s*(check before completion|never claim code is verified|inspect pay attention|clean up hygiene|no silent skips)/i.test(lower)) return true;
+    if (/^(\d+\.|\*|-)?\s*(before declaring any coding task|if checks fail|include the|attach the|resolve issues|tests:\s*passed|tests:\s*failed)/i.test(lower)) return true;
+    if (/^\s*(\d+\s+files?\s+changed:|\d+\s+meaningful\s+lines)/i.test(clean)) return true;
+    if (/\(\+\d+\/-\d+\)/.test(clean)) return true;
+    return false;
+  };
+
+  return addedLines.every(isStructuralOrProtocol);
+}
+

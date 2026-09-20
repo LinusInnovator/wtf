@@ -4,6 +4,7 @@ import { analyzeRepo } from './core/evidence.js';
 import { formatTerminal } from './formatters/terminal.js';
 import { formatShow } from './formatters/show.js';
 import { formatJson } from './formatters/json.js';
+import { formatAgent } from './formatters/agent.js';
 
 const VERSION = '0.1.0';
 
@@ -11,6 +12,8 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
   let isJson = false;
   let isVerify = false;
   let isShow = false;
+  let isCheck = false;
+  let isAgent = false;
   let commit: string | undefined;
   let range: string | undefined;
   let stagedOnly = false;
@@ -30,6 +33,12 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
 
     if (arg === '--json' || arg === '-j') {
       isJson = true;
+    } else if (arg === 'check') {
+      isCheck = true;
+      isVerify = true;
+      isAgent = true;
+    } else if (arg === '--agent') {
+      isAgent = true;
     } else if (arg === 'verify') {
       isVerify = true;
     } else if (arg === 'show') {
@@ -69,14 +78,18 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
 
     if (isJson) {
       console.log(formatJson(result));
+    } else if (isCheck || isAgent) {
+      console.log(formatAgent(result));
     } else if (isShow) {
       console.log(formatShow(result));
     } else {
       console.log(formatTerminal(result));
     }
 
-    // If verification was run and failed, exit code 1
-    if (isVerify && result.receipt.verification.some((v) => v.status === 'FAILED')) {
+    // Exit code 1 if verification failed or critical attention item triggered
+    const hasFailedVerif = isVerify && result.receipt.verification.some((v) => v.status === 'FAILED');
+    const hasCriticalAttention = isCheck && result.receipt.payAttention.some((f) => f.severity === 'CRITICAL');
+    if (hasFailedVerif || hasCriticalAttention) {
       process.exit(1);
     }
   } catch (err: any) {
@@ -96,12 +109,14 @@ See what changed, what actually worked, and what deserves attention.
 
 \x1b[1mUSAGE:\x1b[0m
   $ wtf                 Inspect what just changed (read-only)
+  $ wtf check           Verify tests, inspect changes & emit token-dense agent report (1 turn)
   $ wtf verify          Run discovered project checks and generate verified receipt
   $ wtf show            Drill down into evidence findings and diff snippets
   $ wtf --json          Output machine-readable wtf/0.1 JSON schema for agents
 
 \x1b[1mOPTIONS:\x1b[0m
   -j, --json            Emit machine-readable JSON (spec: wtf/0.1)
+      --agent           Emit token-dense markdown formatted for AI agents
   -s, --staged          Analyze only staged git changes
   -c, --commit <hash>   Analyze a specific commit
   -r, --range <rev..rev> Analyze a git revision range (e.g. main..HEAD)
@@ -110,6 +125,7 @@ See what changed, what actually worked, and what deserves attention.
   -v, --version         Show version
 
 \x1b[1mSUBCOMMANDS:\x1b[0m
+  check                 Single-turn verification and change inspection for coding agents
   verify                Run detected project test and build targets
   show                  Display detailed evidence ledger
   init-agent            Configure autonomous agent completion protocol in repo (use --print for dry-run)
@@ -126,11 +142,10 @@ function initAgentInstructions(printOnly = false): void {
   const protocol = [
     '## Task Completion Protocol with WTF',
     'Before declaring any coding task complete:',
-    '1. Run `npx agent-wtf` (or `wtf --json`) to inspect all changes.',
-    '2. Review all items under PAY ATTENTION and ALSO.',
-    '3. If tests or typechecks exist, run `npx agent-wtf verify` to independently validate them.',
-    '4. Never claim checks are verified without WTF VERIFIED evidence (passing checks do not prove broader intent is correct).',
-    '5. Always attach the WTF Verification Receipt to your final completion report.'
+    '1. Run `wtf check` (or `npx agent-wtf check`). This verifies tests, inspects changes, and surfaces risks in a single turn.',
+    '2. If checks fail under `[FAILED]` or critical items appear under `[PAY ATTENTION]`, resolve them.',
+    '3. Attach the one-line `WTF-RECEIPT:` to your final completion report.',
+    '4. Epistemic boundary: passing checks prove only that executed tests passed, not that overall user intent or requirements are met.'
   ].join('\n');
 
   if (printOnly) {
@@ -150,7 +165,7 @@ function initAgentInstructions(printOnly = false): void {
     const filePath = path.join(cwd, relPath);
     if (fs.existsSync(filePath)) {
       const content = fs.readFileSync(filePath, 'utf8');
-      if (content.includes('Task Completion Protocol with WTF') || content.includes('agent-wtf verify')) {
+      if (content.includes('Task Completion Protocol with WTF') || content.includes('agent-wtf check')) {
         console.log(`  \x1b[32m✓\x1b[0m ${relPath} already includes WTF protocol.`);
       } else {
         fs.appendFileSync(filePath, `\n\n${protocol}\n`);

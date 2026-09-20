@@ -1,5 +1,5 @@
 import * as path from 'node:path';
-import { isBinaryPath, isMechanicalPath } from './classifier.js';
+import { isBinaryPath, isMechanicalPath, isWtfProtocolPatch } from './classifier.js';
 import { isPathInside, safeGit, safeReadRepoFile, sanitizeGitRef } from './security.js';
 import type { AnalyzeOptions, ChangeSummary, DiffHunk, FileDiffStat, FilePatch } from '../types.js';
 
@@ -112,7 +112,7 @@ export function parseUnifiedDiff(diffOutput: string): FilePatch[] {
       status = 'renamed';
     }
 
-    const { isMechanical } = isMechanicalPath(newPath);
+    const { isMechanical: isPathMech } = isMechanicalPath(newPath);
 
     const hunks: DiffHunk[] = [];
     let currentHunk: DiffHunk | null = null;
@@ -153,6 +153,9 @@ export function parseUnifiedDiff(diffOutput: string): FilePatch[] {
       hunks.push(currentHunk);
     }
 
+    const isProtocol = isWtfProtocolPatch(newPath, hunks);
+    const isMechanical = isPathMech || isProtocol;
+
     patches.push({
       path: newPath,
       oldPath: status === 'renamed' ? oldPath : undefined,
@@ -192,9 +195,12 @@ export function getUntrackedFilePatches(root: string, untrackedFiles: string[]):
       if (content === null) continue;
 
       const lines = content.split('\n');
-      const { isMechanical } = isMechanicalPath(relPath);
+      const { isMechanical: isPathMech } = isMechanicalPath(relPath);
 
       const hunkLines = lines.map((l) => '+' + l);
+      const isProtocol = isWtfProtocolPatch(relPath, [{ lines: hunkLines }]);
+      const isMechanical = isPathMech || isProtocol;
+
       patches.push({
         path: relPath,
         hunks: [

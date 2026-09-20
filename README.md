@@ -7,6 +7,8 @@
 
 ### Your coding agent says it’s done. WTF checks.
 
+**Git records what changed. WTF tells you what in that change deserves your attention and what has actually been verified.**
+
 Any agent. Any Git repo. Local. No account. No AI required.
 
 WTF works with any coding agent (Claude Code, Cursor, Copilot, Codex, Aider) because it inspects the resulting software change, not the agent.
@@ -20,24 +22,37 @@ npx agent-wtf
 ```
 $ npx agent-wtf
 WTF — what just happened?
-2 files changed · +7 / -5
+47 files changed · +4,180 / -101
 
 VERIFIED
   ○ Tests not yet run · Run wtf verify to validate
     tests (npm test)
 
+FILES
+  • auth/session.ts                     +12/-4
+  • test/charge.test.js                 +1/-2
+  + package-lock.json                   [mechanical · +4,050/-30]
+  • package.json                        +3/-1
+  ... and 43 more files. Run `wtf show` for full list.
+
 PAY ATTENTION
-  1. TESTS
+  1. AUTH
+     Session expiry / timeout behavior modified
+     auth/session.ts:42
+     > const SESSION_EXPIRY = 60 * 60 * 24 * 7;
+  2. TESTS
      Test skipped or disabled
      test/charge.test.js:9
      > test.skip('handles VIP coupon cap calculation', () => {
 
 ALSO
   ⚠ 1 skipped test
-  ⚠ 1 debug statement (console.log)
+  ⚠ auth logic modified
+  + 1 dependency added
 
+Most changes appear mechanical/generated.
 Review surface:
-  12 lines to review across 2 files
+  ~146 meaningful lines / 4,281 changed (96.6% compressed)
 ```
 
 Then:
@@ -45,27 +60,30 @@ Then:
 ```
 $ npx agent-wtf verify
 WTF — what just happened?
-2 files changed · +6 / -5
+47 files changed · +4,180 / -101
 
 VERIFIED
-  ✓ tests       (254ms)
+  ✓ tests       183/183 passed (312ms)
 
 Review surface:
-  11 lines to review across 2 files
+  ~146 meaningful lines / 4,281 changed (96.6% compressed)
 ```
 
 ```
 Agent finishes
      ↓
-    WTF
+   `wtf`
      ↓
-  Evidence
+4,281 lines → 146 meaningful lines
+Catches skipped tests & auth regression
      ↓
 Agent fixes
      ↓
-WTF verify
+`wtf verify`
      ↓
-Human gets receipt
+Independent local execution receipt
+     ↓
+Human decides
 ```
 
 ---
@@ -104,11 +122,16 @@ You review what matters. WTF accounts for the rest.
 
 ## Why Not Just `git diff`?
 
-| Standard Tooling | What Happens with Coding Agents | How WTF Solves It |
+Git tells you what changed. WTF tells you what in that change deserves your attention and what has actually been verified.
+
+Git is the underlying sensor. WTF is the observer and verification layer.
+
+| Dimension | Plain Git (`git diff`) | WTF (`npx agent-wtf`) |
 | :--- | :--- | :--- |
-| **`git status`** | Lists modified files, but treats a 2,000-line lockfile the same as an auth timeout modification. | **Separates signal from churn**: Classifies mechanical lines vs. meaningful lines deserving human review. |
-| **`git diff`** | Floods your terminal with generated boilerplate, snapshots, and minified bundles. | **Focuses human attention**: Automatically highlights high-risk patterns (auth, DB migrations, env vars, debug leftovers). |
-| **Agent Claims** | Believes the agent when it claims *"refactored billing module and all tests pass"*. | **Verifies independently**: Flags skipped or disabled tests (`test.skip`) and generates an unforgeable local execution receipt (`wtf verify`). |
+| **Review Surface** | Floods terminal with 4,000+ lines of lockfiles, build artifacts, snapshots, and mechanical churn. | **Semantic compression**: Compresses mechanical churn to isolate meaningful code (~96% compression typical). |
+| **High-Risk Detection** | Shows raw line diffs; human must manually spot subtle regressions buried across dozens of files. | **Routes attention**: Automatically flags auth changes, skipped tests (`test.skip`), DB migrations, env vars, and debug leftovers. |
+| **Execution Evidence** | None. Git records file changes, but has no concept of whether tests passed or code built. | **Independent execution**: Discovers and runs project checks (`wtf verify`), recording local execution evidence (`VERIFIED`). |
+| **Agent Completion** | Free-form claims: Agent says *"Done, refactored billing and all tests pass."* | **Completion protocol**: Gives agents a machine-readable schema (`wtf --json`) and auto-configures completion rules (`wtf init-agent`) so agents self-audit and verify before reporting. |
 
 ---
 
@@ -126,13 +149,14 @@ Or install globally:
 npm install -g agent-wtf
 ```
 
-### The 5 Essential Commands
+### The Essential Commands
 
 | Command | What it does |
 | :--- | :--- |
 | `wtf` | See what changed and what needs attention in your working tree (~50ms). |
-| `wtf init-agent` | Automatically configure your repository for autonomous agent self-auditing. |
+| `wtf check` | Single-turn verification and change inspection designed for coding agents. |
 | `wtf verify` | Discover and run your tests/builds to produce an independently verified receipt. |
+| `wtf init-agent` | Automatically configure your repository for autonomous agent self-auditing. |
 | `wtf show` | View exact diff snippets and line evidence for every finding. |
 | `wtf --json` | Machine-readable evidence schema (`wtf/0.1`) for coding agents. |
 
@@ -151,8 +175,8 @@ This automatically configures your repository's agent rules (`AGENTS.md`, `CLAUD
 From that moment on, whenever Claude Code, Cursor, Copilot, or Cline works in your repo, the agent autonomously:
 1. **Runs WTF** before declaring completion.
 2. **Catches shortcuts**: Detects its own skipped tests (`test.skip`), debug leftovers (`console.log`), and schema risks.
-3. **Executes tests**: Runs `wtf verify` to independently validate your test suite.
-4. **Hands you proof**: Attaches the unforgeable verification receipt directly to its final reply before you review.
+3. **Executes tests**: Runs `wtf verify` to independently execute and validate your test suite.
+4. **Hands you proof**: Attaches the independent local verification receipt directly to its final reply before you review.
 
 *(To view the markdown template without modifying files, pass `npx agent-wtf init-agent --print`).*
 
