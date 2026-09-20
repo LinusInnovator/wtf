@@ -197,6 +197,10 @@ npm test
 npm run gauntlet
 ```
 
+---
+
+Built by [@LinusInnovator](https://github.com/LinusInnovator). Explored in depth at [Great Delights](https://great.delights.pro/ai-patterns).
+
 ## License
 
 [MIT](LICENSE)
