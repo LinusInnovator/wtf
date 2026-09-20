@@ -80,7 +80,7 @@ When an agent claims: *"Done! Refactored the billing module and all tests pass."
 2. **Did it actually work, or did the agent just say it did?**
 3. **Where do I actually need to look?**
 
-WTF gives you the answers in ~20 seconds.
+WTF gives you the answers in under a second.
 
 ---
 
