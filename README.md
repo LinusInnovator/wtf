@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Security Policy](https://img.shields.io/badge/Security-Policy-blue.svg)](SECURITY.md)
-[![Zero Dependencies](https://img.shields.io/badge/Dependencies-0-success.svg)](#wtf-doesnt-need-your-code)
+[![Zero Dependencies](https://img.shields.io/badge/Dependencies-0-success.svg)](#local-by-default-paranoid-by-design)
 [![Gauntlet: 100/100](https://img.shields.io/badge/Gauntlet-100%2F100-brightgreen.svg)](#contributing)
 
 ### Your coding agent says it’s done. WTF checks.
@@ -99,6 +99,16 @@ WTF separates mechanical churn from code that actually deserves human attention:
 ```
 
 You review what matters. WTF accounts for the rest.
+
+---
+
+## Why Not Just `git diff`?
+
+| Standard Tooling | What Happens with Coding Agents | How WTF Solves It |
+| :--- | :--- | :--- |
+| **`git status`** | Lists modified files, but treats a 2,000-line lockfile the same as an auth timeout modification. | **Separates signal from churn**: Classifies mechanical lines vs. meaningful lines deserving human review. |
+| **`git diff`** | Floods your terminal with generated boilerplate, snapshots, and minified bundles. | **Focuses human attention**: Automatically highlights high-risk patterns (auth, DB migrations, env vars, debug leftovers). |
+| **Agent Claims** | Believes the agent when it claims *"refactored billing module and all tests pass"*. | **Verifies independently**: Flags skipped or disabled tests (`test.skip`) and generates an unforgeable local execution receipt (`wtf verify`). |
 
 ---
 
