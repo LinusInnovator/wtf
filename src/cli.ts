@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { analyzeRepo } from './core/evidence.js';
 import { formatTerminal } from './formatters/terminal.js';
 import { formatShow } from './formatters/show.js';
@@ -51,7 +53,8 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
     } else if (arg.includes('..')) {
       range = arg;
     } else if (arg === 'init-agent') {
-      printAgentInstructions();
+      const printOnly = args.includes('--print') || args.includes('-p');
+      initAgentInstructions(printOnly);
       process.exit(0);
     }
   }
@@ -109,7 +112,7 @@ See what changed, what actually worked, and what deserves attention.
 \x1b[1mSUBCOMMANDS:\x1b[0m
   verify                Run detected project test and build targets
   show                  Display detailed evidence ledger
-  init-agent            Print agent completion instruction template
+  init-agent            Configure autonomous agent completion protocol in repo (use --print for dry-run)
 
 \x1b[1mEVIDENCE TIERS:\x1b[0m
   REPORTED  Claims from external sources / commit messages
@@ -119,22 +122,47 @@ See what changed, what actually worked, and what deserves attention.
 `);
 }
 
-function printAgentInstructions(): void {
-  console.log(`
-### WTF Agent Completion Protocol (For AGENTS.md / CLAUDE.md / .cursorrules)
+function initAgentInstructions(printOnly = false): void {
+  const protocol = [
+    '## Task Completion Protocol with WTF',
+    'Before declaring any coding task complete:',
+    '1. Run `npx agent-wtf` (or `wtf --json`) to inspect all changes.',
+    '2. Review all items under PAY ATTENTION and ALSO.',
+    '3. If tests or typechecks exist, run `npx agent-wtf verify` to independently validate them.',
+    '4. Never claim checks are verified without WTF VERIFIED evidence (passing checks do not prove broader intent is correct).',
+    '5. Always attach the WTF Verification Receipt to your final completion report.'
+  ].join('\n');
 
-Add the following to your agent instructions:
+  if (printOnly) {
+    console.log(`\n### WTF Agent Completion Protocol (For AGENTS.md / CLAUDE.md / .cursorrules)\n\n${protocol}\n`);
+    return;
+  }
 
-\`\`\`markdown
-## Task Completion Protocol with WTF
-Before declaring any coding task complete:
-1. Run \`wtf\` (or \`wtf --json\`) to inspect all changes.
-2. Review all items under PAY ATTENTION and ALSO.
-3. If tests or typechecks exist, run \`wtf verify\` to independently validate them.
-4. Never claim checks are verified without WTF VERIFIED evidence (passing checks do not prove broader intent is correct).
-5. If unresolved findings exist (e.g. skipped tests, debug leftovers, migration risks), fix them or document them in your final report.
-\`\`\`
-`);
+  const cwd = process.cwd();
+  const targets = ['AGENTS.md'];
+  if (fs.existsSync(path.join(cwd, 'CLAUDE.md'))) targets.push('CLAUDE.md');
+  if (fs.existsSync(path.join(cwd, '.cursorrules'))) targets.push('.cursorrules');
+  if (fs.existsSync(path.join(cwd, '.github'))) targets.push('.github/copilot-instructions.md');
+
+  console.log(`\n\x1b[1m\x1b[36mWTF\x1b[0m — Configuring Autonomous Agent Protocol\n`);
+
+  for (const relPath of targets) {
+    const filePath = path.join(cwd, relPath);
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+      if (content.includes('Task Completion Protocol with WTF') || content.includes('agent-wtf verify')) {
+        console.log(`  \x1b[32m✓\x1b[0m ${relPath} already includes WTF protocol.`);
+      } else {
+        fs.appendFileSync(filePath, `\n\n${protocol}\n`);
+        console.log(`  \x1b[32m✓\x1b[0m Appended WTF Completion Protocol to ${relPath}`);
+      }
+    } else {
+      fs.writeFileSync(filePath, `# Agent Guidelines\n\n${protocol}\n`);
+      console.log(`  \x1b[32m✓\x1b[0m Created ${relPath} with WTF Completion Protocol`);
+    }
+  }
+
+  console.log(`\n\x1b[32mAutonomous protocol active:\x1b[0m Coding agents in this repository will now run WTF and verify work before concluding tasks.\n`);
 }
 
 // Run CLI when invoked as script
