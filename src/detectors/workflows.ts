@@ -38,11 +38,11 @@ export function detectWorkflowChanges(patches: FilePatch[]): {
         findings.push({
           id: `workflow-pr-target-${patch.path}`,
           category: 'SECURITY',
-          title: `Security sensitive workflow trigger in ${patch.path}`,
-          description: `pull_request_target trigger modified or added. Ensure untrusted PRs cannot execute with write permissions.`,
+          title: `pull_request_target trigger in ${patch.path}`,
+          description: `pull_request_target workflow trigger modified or added in ${patch.path}`,
           file: patch.path,
           evidenceTier: 'OBSERVED',
-          severity: 'CRITICAL',
+          severity: 'WARN',
         });
       } else if (hasSecretReference) {
         findings.push({

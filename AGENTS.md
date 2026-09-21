@@ -68,3 +68,11 @@ Before declaring a coding task complete:
 2. If checks fail under `[FAILED]` or critical items appear under `[PAY ATTENTION]`, resolve them.
 3. Include the `WTF-RECEIPT:` line in your response to the user.
 ```
+
+---
+
+## Developing WTF Itself
+Before modifying WTF's evidence model, verification behavior, agent-facing protocol, or core architecture:
+1. Read [`docs/research/WTF_RESEARCH_STATE.md`](docs/research/WTF_RESEARCH_STATE.md) and [`docs/research/WTF_EVIDENCE_PROTOCOL_V0.md`](docs/research/WTF_EVIDENCE_PROTOCOL_V0.md).
+2. Do not violate established epistemic constraints or alter the five primitives without documenting the empirical reason.
+

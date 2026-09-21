@@ -24,7 +24,7 @@
     "url": "https://github.com/LinusInnovator/wtf/issues"
   },
   "scripts": {
-    "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node18 --outfile=dist/cli.js",
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node18 --outfile=dist/cli.js && esbuild src/core/evidence-compiler.ts --bundle --platform=node --format=esm --target=node18 --outfile=dist/evidence-compiler.js",
     "prepublishOnly": "npm run build && npm test",
     "test": "vitest run test",
     "test:watch": "vitest test",

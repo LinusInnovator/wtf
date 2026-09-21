@@ -42,12 +42,12 @@ export function detectAuthChanges(patches: FilePatch[]): Finding[] {
             findings.push({
               id: `auth-expiry-${patch.path}-${currentLineNum}`,
               category: 'AUTH',
-              title: 'Session expiry / timeout behavior modified',
-              description: `Session expiry or timeout configuration was changed in ${patch.path}`,
+              title: `Session expiry / timeout token match in ${patch.path}`,
+              description: `Observed token matching session expiry / timeout pattern in ${patch.path}`,
               file: patch.path,
               line: currentLineNum,
               evidenceTier: 'OBSERVED',
-              severity: 'CRITICAL',
+              severity: 'WARN',
               snippet: content,
             });
           }
@@ -60,12 +60,12 @@ export function detectAuthChanges(patches: FilePatch[]): Finding[] {
             findings.push({
               id: `auth-permission-${patch.path}-${currentLineNum}`,
               category: 'AUTH',
-              title: 'Permission or role authorization rule modified',
-              description: `Authorization check or role gating changed in ${patch.path}`,
+              title: `Permission / role authorization token match in ${patch.path}`,
+              description: `Observed token matching role or permission check pattern in ${patch.path}`,
               file: patch.path,
               line: currentLineNum,
               evidenceTier: 'OBSERVED',
-              severity: 'CRITICAL',
+              severity: 'WARN',
               snippet: content,
             });
           }
@@ -80,8 +80,8 @@ export function detectAuthChanges(patches: FilePatch[]): Finding[] {
             findings.push({
               id: `auth-crypto-${patch.path}-${currentLineNum}`,
               category: 'AUTH',
-              title: 'Cryptographic or token verification routine modified',
-              description: `Token signing, hashing, or verification logic changed in ${patch.path}`,
+              title: `Cryptographic / token routine token match in ${patch.path}`,
+              description: `Observed token matching cryptography or token routine in ${patch.path}`,
               file: patch.path,
               line: currentLineNum,
               evidenceTier: 'OBSERVED',
@@ -102,8 +102,8 @@ export function detectAuthChanges(patches: FilePatch[]): Finding[] {
       findings.push({
         id: `auth-file-${patch.path}`,
         category: 'AUTH',
-        title: `Authentication logic updated in ${patch.path}`,
-        description: `Auth-sensitive file ${patch.path} was ${patch.status} (+${patch.added}/-${patch.deleted})`,
+        title: `Auth/session path match: ${patch.path}`,
+        description: `Changed file matches auth/session path pattern: ${patch.path} (+${patch.added}/-${patch.deleted})`,
         file: patch.path,
         evidenceTier: 'OBSERVED',
         severity: 'WARN',

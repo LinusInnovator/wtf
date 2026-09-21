@@ -31,18 +31,18 @@ export function detectDatabaseChanges(patches: FilePatch[]): Finding[] {
         if (line.startsWith('+') && !line.startsWith('+++')) {
           const content = truncateLineForRegex(line.slice(1).trim());
 
-          // Destructive SQL operations
+          // SQL DROP operations
           if (/DROP\s+(TABLE|COLUMN|DATABASE|VIEW|INDEX)/i.test(content)) {
             hasDestructive = true;
             findings.push({
               id: `db-drop-${patch.path}-${currentLineNum}`,
               category: 'DATABASE',
-              title: `Destructive schema operation (DROP) in ${patch.path}`,
-              description: `Drop operation detected: "${content}"`,
+              title: `Schema drop operation (DROP) in ${patch.path}`,
+              description: `DROP operation observed: "${content}"`,
               file: patch.path,
               line: currentLineNum,
               evidenceTier: 'OBSERVED',
-              severity: 'CRITICAL',
+              severity: 'WARN',
               snippet: content,
             });
           }
@@ -53,12 +53,12 @@ export function detectDatabaseChanges(patches: FilePatch[]): Finding[] {
             findings.push({
               id: `db-owner-${patch.path}-${currentLineNum}`,
               category: 'DATABASE',
-              title: `Database ownership / permissions altered in ${patch.path}`,
-              description: `Ownership or permission change detected: "${content}"`,
+              title: `Database ownership / permissions operation in ${patch.path}`,
+              description: `Ownership or permission operation observed: "${content}"`,
               file: patch.path,
               line: currentLineNum,
               evidenceTier: 'OBSERVED',
-              severity: 'CRITICAL',
+              severity: 'WARN',
               snippet: content,
             });
           }
@@ -69,12 +69,12 @@ export function detectDatabaseChanges(patches: FilePatch[]): Finding[] {
             findings.push({
               id: `db-truncate-${patch.path}-${currentLineNum}`,
               category: 'DATABASE',
-              title: `Destructive table truncation in ${patch.path}`,
-              description: `Truncate statement detected: "${content}"`,
+              title: `Table truncation operation in ${patch.path}`,
+              description: `Truncate operation observed: "${content}"`,
               file: patch.path,
               line: currentLineNum,
               evidenceTier: 'OBSERVED',
-              severity: 'CRITICAL',
+              severity: 'WARN',
               snippet: content,
             });
           }
@@ -108,7 +108,7 @@ export function detectDatabaseChanges(patches: FilePatch[]): Finding[] {
         description: `New database migration script${tablesDesc} (+${patch.added} lines)`,
         file: patch.path,
         evidenceTier: 'OBSERVED',
-        severity: hasDestructive || hasOwnershipChange ? 'CRITICAL' : 'WARN',
+        severity: 'WARN',
       });
     }
   }

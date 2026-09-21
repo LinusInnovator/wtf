@@ -52,7 +52,7 @@ export interface RawGitStatus {
 
 export function getGitStatus(cwd: string): RawGitStatus {
   try {
-    const res = safeGit(['status', '--porcelain'], cwd);
+    const res = safeGit(['status', '--porcelain', '-uall'], cwd);
     const out = res.stdout;
 
     const staged: string[] = [];

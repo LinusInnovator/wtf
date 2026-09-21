@@ -107,8 +107,8 @@ describe('WTF Machine-Facing Agent Contract', () => {
       const result = analyzeRepo(repo, { verify: false });
       const output = formatAgent(result);
 
-      expect(output).toContain('## PAY ATTENTION');
-      expect(output).toContain('[AUTH]');
+      expect(output).toContain('## OBSERVED');
+      expect(output).toContain('[auth-surface]');
       expect(output).toContain('src/auth.ts');
       expect(output).toContain('WTF-RECEIPT: v0.1');
       expect(output).toContain('ATTENTION (1)');
@@ -181,9 +181,9 @@ describe('WTF Machine-Facing Agent Contract', () => {
 
       expect(res.status).toBe(0);
       const json = JSON.parse(res.stdout);
-      expect(json.spec).toBe('wtf/0.1');
-      expect(json.verification[0].status).toBe('PASSED');
-      expect(json.verification[0].tier).toBe('VERIFIED');
+      expect(json.spec).toBe('wtf/protocol-v0');
+      expect(json.verification.items[0].status).toBe('PASSED');
+      expect(json.verification.items[0].tier).toBe('VERIFIED');
     } finally {
       fs.rmSync(repo, { recursive: true, force: true });
     }

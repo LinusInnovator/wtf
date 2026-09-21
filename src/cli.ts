@@ -86,11 +86,35 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
       console.log(formatTerminal(result));
     }
 
-    // Exit code 1 if verification failed or critical attention item triggered
-    const hasFailedVerif = isVerify && result.receipt.verification.some((v) => v.status === 'FAILED');
-    const hasCriticalAttention = isCheck && result.receipt.payAttention.some((f) => f.severity === 'CRITICAL');
-    if (hasFailedVerif || hasCriticalAttention) {
+    /**
+     * Exit Code Semantics:
+     * 0: SUCCESS / OBSERVED
+     *    - Observation mode: repository analysis complete.
+     *    - Verification mode: all executed verification checks passed (or no failures established).
+     *    - Mechanical observations (auth changes, migrations, deps, skips) are reported as evidence
+     *      and NEVER cause non-zero exit codes.
+     * 1: VERIFICATION_FAILED
+     *    - Verification executed and deterministically established failure (TESTS_FAILED or BUILD_FAILED).
+     * 2: VERIFICATION_INCOMPLETE
+     *    - Verification was actively requested, but execution was interrupted (TIMEOUT) or could not be invoked (INVOCATION_FAILED).
+     * 3: TOOL_EXECUTION_ERROR
+     *    - Fatal error or unhandled exception in WTF tool execution.
+     */
+    const hasFailedVerif =
+      isVerify &&
+      result.evidence.verification.items.some(
+        (v) => v.status === 'FAILED' || v.lifecycle === 'TESTS_FAILED' || v.lifecycle === 'BUILD_FAILED'
+      );
+    const hasIncompleteVerif =
+      isVerify &&
+      result.evidence.verification.items.some(
+        (v) => v.status === 'TIMEOUT' || v.lifecycle === 'TIMEOUT' || v.lifecycle === 'INVOCATION_FAILED'
+      );
+
+    if (hasFailedVerif) {
       process.exit(1);
+    } else if (hasIncompleteVerif) {
+      process.exit(2);
     }
   } catch (err: any) {
     if (isJson) {
@@ -98,7 +122,7 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
     } else {
       console.error(`\x1b[31mError:\x1b[0m ${err.message}`);
     }
-    process.exit(1);
+    process.exit(3);
   }
 }
 
@@ -135,6 +159,12 @@ See what changed, what actually worked, and what deserves attention.
   OBSERVED  Directly observed in git diff & repository state
   VERIFIED  Independently executed checks (tests, typecheck, build)
   UNKNOWN   Unverified checks or unprovable intent
+
+\x1b[1mEXIT CODES:\x1b[0m
+  0  Success / evidence observed (all executed checks passed, or observation complete)
+  1  Verification failed (tests or compilation deterministically failed)
+  2  Verification incomplete (timeout or invocation failure during active verification)
+  3  Tool execution error (fatal error in WTF CLI execution)
 `);
 }
 

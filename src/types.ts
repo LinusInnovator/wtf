@@ -1,3 +1,6 @@
+import type { VerificationLifecycleStatus } from './core/protocol-v0.js';
+export * from './core/protocol-v0.js';
+
 export type EvidenceTier = 'REPORTED' | 'OBSERVED' | 'VERIFIED' | 'UNKNOWN';
 
 export type FindingCategory =
@@ -27,9 +30,10 @@ export interface Finding {
 }
 
 export interface VerificationItem {
-  name: string; // e.g. 'tests', 'typecheck', 'build', 'lint'
+  name: string; // e.g. 'tests', 'typecheck', 'build', 'lint', 'verification'
   command: string;
-  status: 'PASSED' | 'FAILED' | 'SKIPPED' | 'NOT_RUN';
+  status: 'PASSED' | 'FAILED' | 'SKIPPED' | 'NOT_RUN' | 'TIMEOUT' | 'INVOCATION_FAILED' | 'UNKNOWN';
+  lifecycle?: VerificationLifecycleStatus;
   summary?: string; // e.g. '183/183'
   details?: string;
   durationMs?: number;
@@ -99,6 +103,12 @@ export interface WTFReceipt {
   };
   change: ChangeSummary;
   files: FileSummary[];
+  /**
+   * @deprecated ATTENTION(n) / payAttention is a deprecated compatibility field
+   * derived from mechanically observed relations. It does not represent severity,
+   * risk, failure, correctness, or canonical WTF policy. Canonical consumers
+   * must not consume ATTENTION as truth.
+   */
   payAttention: Finding[];
   also: Finding[];
   verification: VerificationItem[];

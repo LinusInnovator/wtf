@@ -157,7 +157,7 @@ DROP TABLE obsolete_tokens;
       expect(result.receipt.payAttention.length).toBeGreaterThanOrEqual(1);
       const dbFinding = result.receipt.payAttention.find((f) => f.category === 'DATABASE');
       expect(dbFinding).toBeDefined();
-      expect(output).toContain('PAY ATTENTION');
+      expect(output).toContain('OBSERVED RELATIONS');
       expect(output).toContain('DATABASE');
       expect(output).toContain('db/0042_accounts.sql');
 
@@ -191,7 +191,7 @@ DROP TABLE obsolete_tokens;
       const authFinding = result.receipt.payAttention.find((f) => f.category === 'AUTH');
       expect(authFinding).toBeDefined();
       expect(authFinding?.title).toContain('Session expiry');
-      expect(output).toContain('PAY ATTENTION');
+      expect(output).toContain('OBSERVED RELATIONS');
       expect(output).toContain('AUTH');
       expect(output).toContain('auth/session.ts');
 
@@ -341,16 +341,15 @@ DROP TABLE obsolete_tokens;
       const jsonStr = formatJson(result);
       const parsed = JSON.parse(jsonStr);
 
-      expect(parsed.spec).toBe('wtf/0.1');
+      expect(parsed.spec).toBe('wtf/protocol-v0');
       expect(parsed.repo).toBeDefined();
       expect(parsed.change).toBeDefined();
-      expect(Array.isArray(parsed.payAttention)).toBe(true);
-      expect(Array.isArray(parsed.also)).toBe(true);
-      expect(Array.isArray(parsed.verification)).toBe(true);
-      expect(Array.isArray(parsed.reported)).toBe(true);
-      expect(Array.isArray(parsed.observed)).toBe(true);
-      expect(Array.isArray(parsed.verified)).toBe(true);
-      expect(Array.isArray(parsed.unknown)).toBe(true);
+      expect(parsed.relation).toBeDefined();
+      expect(parsed.verification).toBeDefined();
+      expect(parsed.unknown).toBeDefined();
+      expect(parsed.legacy).toBeDefined();
+      expect(Array.isArray(parsed.legacy.payAttention)).toBe(true);
+      expect(Array.isArray(parsed.legacy.also)).toBe(true);
 
       // Show formatter validity test
       const showStr = formatShow(result);

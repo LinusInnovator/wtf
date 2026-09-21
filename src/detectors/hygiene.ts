@@ -30,7 +30,7 @@ export function detectHygieneIssues(patches: FilePatch[]): {
         if (line.startsWith('+') && !line.startsWith('+++')) {
           const content = truncateLineForRegex(line.slice(1).trim());
 
-          // Destructive calls
+          // Root/recursive shell/filesystem calls
           if (
             /\brm\s+-rf\s+[\/\~]|\bfs\.rmSync\(['"`]\/|\bchild_process\.exec\b/i.test(content) &&
             !isTestOrDocFile
@@ -38,12 +38,12 @@ export function detectHygieneIssues(patches: FilePatch[]): {
             findings.push({
               id: `hygiene-destructive-${patch.path}-${currentLineNum}`,
               category: 'SECURITY',
-              title: `Potentially dangerous command/call in ${patch.path}`,
-              description: `Potentially destructive execution detected: "${content}"`,
+              title: `Root or recursive filesystem call in ${patch.path}`,
+              description: `Recursive or root filesystem operation observed: "${content}"`,
               file: patch.path,
               line: currentLineNum,
               evidenceTier: 'OBSERVED',
-              severity: 'CRITICAL',
+              severity: 'WARN',
               snippet: content,
             });
           }
