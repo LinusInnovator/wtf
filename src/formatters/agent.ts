@@ -49,6 +49,12 @@ export function formatAgent(input: AnalyzeResult | CanonicalEvidenceDocumentV0):
         lines.push(`✓ ${name}: passed${summary}${dur} [${cmd}]`);
       } else if (v.status === 'FAILED' || v.lifecycle === 'TESTS_FAILED' || v.lifecycle === 'BUILD_FAILED') {
         lines.push(`✗ ${name}: FAILED [${cmd}]`);
+        if (v.traceFrames && v.traceFrames.length > 0) {
+          for (const tf of v.traceFrames.slice(0, 3)) {
+            const col = tf.column ? `:${tf.column}` : '';
+            lines.push(`  --> ${tf.file}:${tf.line}${col}`);
+          }
+        }
         if (v.details) {
           const detailLines = sanitizeForTerminal(v.details)
             .split('\n')

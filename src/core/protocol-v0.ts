@@ -157,6 +157,8 @@ export type VerificationLifecycleStatus =
   | 'PARTIAL_EXECUTION';
 
 export type VerificationInvocationStatus = 'VALID' | 'FAILED' | 'UNKNOWN';
+import type { TraceFrame } from './trace-slice.js';
+
 export type VerificationCompilationStatus = 'VALID' | 'FAILED' | 'SKIPPED' | 'UNKNOWN';
 export type VerificationExecutionStatus = 'PASSED' | 'FAILED' | 'TIMEOUT' | 'UNKNOWN';
 
@@ -173,6 +175,7 @@ export interface VerificationItemV0 {
   exitCode?: number | null;
   summary?: string;
   details?: string;
+  traceFrames?: TraceFrame[];
   tier: 'VERIFIED' | 'UNKNOWN';
   provenance: 'VERIFIED' | 'UNKNOWN';
 }

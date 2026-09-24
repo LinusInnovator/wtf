@@ -156,6 +156,8 @@ npm install -g agent-wtf
 | `wtf` | See what changed and what needs attention in your working tree (~50ms). |
 | `wtf check` | Single-turn verification and change inspection designed for coding agents. |
 | `wtf verify` | Discover and run your tests/builds to produce an independently verified receipt. |
+| `wtf view <file:line>` | Deterministically project bounded context viewport around failure coordinates. |
+| `wtf patch <file> ...` | Apply patch with formatting and indentation normalization via Action Compilation. |
 | `wtf init-agent` | Automatically configure your repository for autonomous agent self-auditing. |
 | `wtf show` | View exact diff snippets and line evidence for every finding. |
 | `wtf --json` | Machine-readable evidence schema (`wtf/0.1`) for coding agents. |

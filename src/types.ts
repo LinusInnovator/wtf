@@ -1,5 +1,10 @@
 import type { VerificationLifecycleStatus } from './core/protocol-v0.js';
+import type { TraceFrame } from './core/trace-slice.js';
 export * from './core/protocol-v0.js';
+export * from './core/action-normalizer.js';
+export * from './core/action-compiler.js';
+export * from './core/trace-slice.js';
+export * from './core/viewport.js';
 
 export type EvidenceTier = 'REPORTED' | 'OBSERVED' | 'VERIFIED' | 'UNKNOWN';
 
@@ -36,6 +41,7 @@ export interface VerificationItem {
   lifecycle?: VerificationLifecycleStatus;
   summary?: string; // e.g. '183/183'
   details?: string;
+  traceFrames?: TraceFrame[];
   durationMs?: number;
   tier: EvidenceTier;
 }

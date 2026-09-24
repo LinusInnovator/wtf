@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { isPathInside, safeReadRepoFile } from '../core/security.js';
+import { extractTraceFrames } from '../core/trace-slice.js';
 import type {
   VerificationItem,
   VerificationItemV0,
@@ -562,6 +563,7 @@ export function runVerificationV0(
           combinedOutput,
           res.status
         );
+        const traceFrames = extractTraceFrames(combinedOutput, repoRoot);
         results.push({
           name: target.name,
           command: fullCmd,
@@ -572,6 +574,7 @@ export function runVerificationV0(
           testsExecuted: classified.testsExecuted,
           summary: classified.summary,
           details: classified.details,
+          traceFrames: traceFrames.length > 0 ? traceFrames : undefined,
           durationMs,
           exitCode: res.status,
           tier: classified.tier,
@@ -618,6 +621,7 @@ export function toLegacyVerificationItem(v: VerificationItemV0): VerificationIte
     lifecycle: v.lifecycle,
     summary: v.summary,
     details: v.details,
+    traceFrames: v.traceFrames,
     durationMs: v.durationMs,
     tier: v.tier,
   };

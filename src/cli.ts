@@ -5,6 +5,8 @@ import { formatTerminal } from './formatters/terminal.js';
 import { formatShow } from './formatters/show.js';
 import { formatJson } from './formatters/json.js';
 import { formatAgent } from './formatters/agent.js';
+import { renderBoundedViewport } from './core/viewport.js';
+import { compileAndApplyPatchToFile } from './core/action-compiler.js';
 
 const VERSION = '0.1.0';
 
@@ -46,6 +48,66 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
       isShow = true;
       if (args[i + 1] && !args[i + 1].startsWith('-')) {
         showFilter = args[++i];
+      }
+    } else if (arg === 'view') {
+      const coord = args[++i];
+      if (!coord) {
+        console.error('Error: view requires a file:line coordinate (e.g. wtf view src/lib.rs:388)');
+        process.exit(1);
+      }
+      let radius = 15;
+      if (args[i + 1] === '--radius' || args[i + 1] === '-r') {
+        i++;
+        const parsedR = parseInt(args[++i], 10);
+        if (!isNaN(parsedR)) radius = parsedR;
+      }
+      const parts = coord.split(':');
+      const targetFile = parts[0];
+      const targetLine = parts[1] ? parseInt(parts[1], 10) : 1;
+      const res = renderBoundedViewport(targetFile, isNaN(targetLine) ? 1 : targetLine, { radius });
+      if (res.ok) {
+        console.log(res.formatted);
+        process.exit(0);
+      } else {
+        console.error(res.error || 'Failed to render viewport');
+        process.exit(1);
+      }
+    } else if (arg === 'patch') {
+      const targetFile = args[++i];
+      if (!targetFile) {
+        console.error('Error: patch requires a target file path');
+        process.exit(1);
+      }
+      let oldText: string | undefined;
+      let newText: string | undefined;
+      let startLine: number | undefined;
+      let endLine: number | undefined;
+      while (i + 1 < args.length && args[i + 1].startsWith('-')) {
+        const flag = args[++i];
+        if (flag === '--old') {
+          oldText = args[++i];
+        } else if (flag === '--new') {
+          newText = args[++i];
+        } else if (flag === '--start') {
+          const s = parseInt(args[++i], 10);
+          if (!isNaN(s)) startLine = s;
+        } else if (flag === '--end') {
+          const e = parseInt(args[++i], 10);
+          if (!isNaN(e)) endLine = e;
+        }
+      }
+      if (oldText === undefined || newText === undefined) {
+        console.error('Error: patch requires --old <text> and --new <text>');
+        process.exit(1);
+      }
+      const res = compileAndApplyPatchToFile(targetFile, oldText, newText, { startLine, endLine });
+      if (res.success) {
+        console.log(`✓ patch applied: ${res.filePath} (strategy: ${res.strategyUsed}, ${res.spansMatched} occurrence)`);
+        console.log(`  -${res.linesDeleted || 0} lines, +${res.linesAdded || 0} lines`);
+        process.exit(0);
+      } else {
+        console.error(res.error || 'Failed to apply patch');
+        process.exit(1);
       }
     } else if (arg === '--verify') {
       isVerify = true;
@@ -140,6 +202,8 @@ See what changed, what actually worked, and what deserves attention.
   $ wtf check           Verify tests, inspect changes & emit token-dense agent report (1 turn)
   $ wtf verify          Run discovered project checks and generate verified receipt
   $ wtf show            Drill down into evidence findings and diff snippets
+  $ wtf view <file:line> [--radius N]   Project bounded code viewport around coordinate
+  $ wtf patch <file> --old <t> --new <t> Apply deterministic patch without formatting friction
   $ wtf --json          Output machine-readable wtf/0.1 JSON schema for agents
 
 \x1b[1mOPTIONS:\x1b[0m
@@ -156,6 +220,8 @@ See what changed, what actually worked, and what deserves attention.
   check                 Single-turn verification and change inspection for coding agents
   verify                Run detected project test and build targets
   show                  Display detailed evidence ledger
+  view                  Project bounded context viewport around failure coordinate
+  patch                 Compile and apply patch intent with formatting normalization
   init-agent            Configure autonomous agent completion protocol in repo (use --print for dry-run)
 
 \x1b[1mEVIDENCE TIERS:\x1b[0m
