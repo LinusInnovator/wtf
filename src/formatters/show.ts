@@ -17,22 +17,35 @@ const c = {
 
 /**
  * Show Formatter: Detailed evidence ledger consuming canonical Protocol v0 evidence.
+ * Supports lossless secondary drill-down into specific paths or clusters.
  */
-export function formatShow(input: AnalyzeResult | CanonicalEvidenceDocumentV0): string {
+export function formatShow(
+  input: AnalyzeResult | CanonicalEvidenceDocumentV0,
+  filterPath?: string
+): string {
   const doc: CanonicalEvidenceDocumentV0 = 'evidence' in input ? input.evidence : input;
-  const { repo, relation, diagnostic, verification, unknown } = doc;
+  const { repo, change, relation, diagnostic, verification, unknown } = doc;
   const lines: string[] = [];
 
-  lines.push(`${c.bold}${c.cyan}WTF SHOW${c.reset} — Detailed Evidence Ledger (Protocol v0)`);
+  const filterNormalized = filterPath ? filterPath.replace(/\\/g, '/').replace(/^\/+/, '') : undefined;
+  const filterDesc = filterNormalized ? ` [filter: ${sanitizeForTerminal(filterNormalized)}]` : '';
+
+  lines.push(`${c.bold}${c.cyan}WTF SHOW${c.reset} — Detailed Evidence Ledger (Protocol v0)${filterDesc}`);
   lines.push(`${c.dim}Repo: ${sanitizeForTerminal(repo.root)} | Head: ${sanitizeForTerminal(repo.head || 'none')}${c.reset}`);
   lines.push('');
 
   // 1. Observed Relations
-  if (relation.items.length > 0) {
-    lines.push(`${c.bold}${c.cyan}═══ OBSERVED RELATIONS (${relation.items.length}) ═══${c.reset}`);
+  const matchedRelations = filterNormalized
+    ? relation.items.filter((item) => !item.subject?.file || item.subject.file.startsWith(filterNormalized))
+    : relation.items;
+
+  if (matchedRelations.length > 0) {
+    lines.push(
+      `${c.bold}${c.cyan}═══ OBSERVED RELATIONS (${matchedRelations.length}${filterNormalized ? ` matching '${filterNormalized}'` : ''}) ═══${c.reset}`
+    );
     lines.push('');
-    for (let i = 0; i < relation.items.length; i++) {
-      const item = relation.items[i];
+    for (let i = 0; i < matchedRelations.length; i++) {
+      const item = matchedRelations[i];
       lines.push(`${c.bold}${i + 1}. ${sanitizeForTerminal(item.statement)}${c.reset}`);
       lines.push(`   ${c.dim}Predicate:${c.reset} ${sanitizeForTerminal(item.predicate)} | ${c.dim}Provenance:${c.reset} ${item.provenance}`);
       if (item.subject?.file) {
@@ -43,10 +56,16 @@ export function formatShow(input: AnalyzeResult | CanonicalEvidenceDocumentV0): 
   }
 
   // 2. Diagnostics
-  if (diagnostic.items.length > 0) {
-    lines.push(`${c.bold}═══ REPORTED DIAGNOSTICS (${diagnostic.items.length}) ═══${c.reset}`);
+  const matchedDiagnostics = filterNormalized
+    ? diagnostic.items.filter((item) => !item.file || item.file.startsWith(filterNormalized))
+    : diagnostic.items;
+
+  if (matchedDiagnostics.length > 0) {
+    lines.push(
+      `${c.bold}═══ REPORTED DIAGNOSTICS (${matchedDiagnostics.length}${filterNormalized ? ` matching '${filterNormalized}'` : ''}) ═══${c.reset}`
+    );
     lines.push('');
-    for (const item of diagnostic.items) {
+    for (const item of matchedDiagnostics) {
       lines.push(`• [${sanitizeForTerminal(item.tool)}] ${c.bold}${sanitizeForTerminal(item.message)}${c.reset}`);
       if (item.file) {
         lines.push(`  ${c.dim}${sanitizeForTerminal(item.file)}${item.line ? `:${item.line}` : ''}${c.reset}`);
@@ -79,5 +98,21 @@ export function formatShow(input: AnalyzeResult | CanonicalEvidenceDocumentV0): 
     lines.push('');
   }
 
+  // 5. Changed Files Detail (Lossless Retrieval)
+  if (change.files.length > 0) {
+    const matchedFiles = filterNormalized
+      ? change.files.filter((f) => f.file.startsWith(filterNormalized))
+      : change.files;
+
+    lines.push(
+      `${c.bold}═══ CHANGED FILES (${matchedFiles.length}${filterNormalized ? ` matching '${filterNormalized}'` : ''}) ═══${c.reset}`
+    );
+    for (const f of matchedFiles) {
+      lines.push(`  • ${sanitizeForTerminal(f.file)} (+${f.additions}/-${f.deletions})`);
+    }
+    lines.push('');
+  }
+
   return lines.join('\n');
 }
+

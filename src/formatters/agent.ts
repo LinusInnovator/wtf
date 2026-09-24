@@ -1,6 +1,7 @@
 import type { AnalyzeResult } from '../core/evidence.js';
 import type { CanonicalEvidenceDocumentV0 } from '../core/protocol-v0.js';
 import { sanitizeForTerminal } from '../core/security.js';
+import { buildPathTree, renderPathTreeMarkdown } from '../core/path-tree.js';
 
 /**
  * Agent Formatter: Deterministic, token-dense, zero-ANSI output designed for coding agents.
@@ -95,16 +96,24 @@ export function formatAgent(input: AnalyzeResult | CanonicalEvidenceDocumentV0):
     const totalLinesDeleted = change.files.reduce((acc, f) => acc + f.deletions, 0);
 
     if (appFiles.length > 0) {
-      const meaningfulStr = change.meaningfulLines !== undefined ? ` (${change.meaningfulLines} meaningful lines)` : '';
+      const tree = buildPathTree(appFiles);
+      const clusterNote =
+        tree.clusters.length > 1 && appFiles.length > 4
+          ? ` across ${tree.clusters.length} directory clusters`
+          : '';
+      const meaningfulStr =
+        change.meaningfulLines !== undefined
+          ? ` (${change.meaningfulLines} meaningful lines${clusterNote})`
+          : clusterNote
+          ? ` (${clusterNote.trim()})`
+          : '';
       lines.push(
         `${appFiles.length} application ${appFiles.length === 1 ? 'file' : 'files'} changed: +${totalLinesAdded} / -${totalLinesDeleted}${meaningfulStr}`
       );
-      for (const f of appFiles.slice(0, 8)) {
-        const p = sanitizeForTerminal(f.file);
-        lines.push(`  • ${p} (+${f.additions}/-${f.deletions})`);
-      }
-      if (appFiles.length > 8) {
-        lines.push(`  ... and ${appFiles.length - 8} more files`);
+
+      const treeLines = renderPathTreeMarkdown(tree, { smallFileThreshold: 4 });
+      for (const tl of treeLines) {
+        lines.push(tl);
       }
     } else if (protocolFiles.length > 0) {
       lines.push('Working tree contains only WTF agent protocol configuration.');
@@ -113,30 +122,87 @@ export function formatAgent(input: AnalyzeResult | CanonicalEvidenceDocumentV0):
       }
     }
 
-    // Mechanical Relations (neutral observed facts)
+    // Mechanical Relations (neutral observed facts with deterministic repetition aggregation)
     if (relation.items.length > 0) {
       lines.push('');
       lines.push('Observed relations:');
-      for (const rel of relation.items.slice(0, 10)) {
+
+      const byPredicate = new Map<string, typeof relation.items>();
+      for (const rel of relation.items) {
+        const list = byPredicate.get(rel.predicate) || [];
+        list.push(rel);
+        byPredicate.set(rel.predicate, list);
+      }
+
+      for (const [pred, items] of byPredicate.entries()) {
         const tag =
-          rel.predicate === 'intersects_auth_surface'
+          pred === 'intersects_auth_surface'
             ? 'auth-surface'
-            : rel.predicate === 'declares_schema_operation'
+            : pred === 'declares_schema_operation'
             ? 'schema'
-            : rel.predicate === 'declares_skipped_test'
+            : pred === 'declares_skipped_test'
             ? 'test-skip'
-            : rel.predicate === 'declares_dependency'
+            : pred === 'declares_dependency'
             ? 'dependency'
-            : rel.predicate === 'triggers_workflow'
+            : pred === 'triggers_workflow'
             ? 'workflow'
             : 'relation';
-        const loc = rel.subject?.file
-          ? ` (${sanitizeForTerminal(rel.subject.file)}${rel.subject.line ? `:${rel.subject.line}` : ''})`
-          : '';
-        lines.push(`  • [${tag}] ${sanitizeForTerminal(rel.statement)}${loc}`);
-      }
-      if (relation.items.length > 10) {
-        lines.push(`  ... and ${relation.items.length - 10} more relations`);
+
+        if (items.length === 1) {
+          const rel = items[0];
+          const loc = rel.subject?.file
+            ? ` (${sanitizeForTerminal(rel.subject.file)}${rel.subject.line ? `:${rel.subject.line}` : ''})`
+            : '';
+          lines.push(`  • [${tag}] ${sanitizeForTerminal(rel.statement)}${loc}`);
+        } else if (pred === 'declares_skipped_test') {
+          const fileCountMap = new Map<string, number>();
+          const lineNumbers: number[] = [];
+          for (const item of items) {
+            if (item.subject?.file) {
+              fileCountMap.set(item.subject.file, (fileCountMap.get(item.subject.file) || 0) + 1);
+            }
+            if (item.subject?.line) {
+              lineNumbers.push(item.subject.line);
+            }
+          }
+          const uniqueFiles = Array.from(fileCountMap.keys()).sort();
+          const locStr =
+            uniqueFiles.length === 1
+              ? ` in ${sanitizeForTerminal(uniqueFiles[0])}${lineNumbers.length > 0 ? ` (lines ${lineNumbers.join(', ')})` : ''}`
+              : ` across ${uniqueFiles.length} files`;
+          lines.push(`  • [${tag}] ${items.length} skipped tests${locStr}`);
+        } else if (items.length > 2 || pred === 'intersects_auth_surface') {
+          // Aggregate repeated instances deterministically
+          const fileCountMap = new Map<string, number>();
+          for (const item of items) {
+            if (item.subject?.file) {
+              fileCountMap.set(item.subject.file, (fileCountMap.get(item.subject.file) || 0) + 1);
+            }
+          }
+
+          const uniqueFiles = Array.from(fileCountMap.keys()).sort();
+          if (pred === 'intersects_auth_surface') {
+            const fileSummary =
+              uniqueFiles.length <= 3
+                ? uniqueFiles.map((f) => `${sanitizeForTerminal(f)} (${fileCountMap.get(f)})`).join(', ')
+                : `${uniqueFiles.length} files (${uniqueFiles.slice(0, 3).map((f) => sanitizeForTerminal(f)).join(', ')}...)`;
+            lines.push(`  • [${tag}] ${items.length} token matches across ${fileSummary}`);
+          } else {
+            const fileSummary =
+              uniqueFiles.length <= 3
+                ? uniqueFiles.map((f) => sanitizeForTerminal(f)).join(', ')
+                : `${uniqueFiles.length} files`;
+            lines.push(`  • [${tag}] ${items.length} occurrences across ${fileSummary}`);
+          }
+        } else {
+          // <= 2 distinct items for general predicates: print directly to preserve statements
+          for (const rel of items) {
+            const loc = rel.subject?.file
+              ? ` (${sanitizeForTerminal(rel.subject.file)}${rel.subject.line ? `:${rel.subject.line}` : ''})`
+              : '';
+            lines.push(`  • [${tag}] ${sanitizeForTerminal(rel.statement)}${loc}`);
+          }
+        }
       }
     }
 

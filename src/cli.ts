@@ -17,6 +17,7 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
   let commit: string | undefined;
   let range: string | undefined;
   let stagedOnly = false;
+  let showFilter: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -43,6 +44,9 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
       isVerify = true;
     } else if (arg === 'show') {
       isShow = true;
+      if (args[i + 1] && !args[i + 1].startsWith('-')) {
+        showFilter = args[++i];
+      }
     } else if (arg === '--verify') {
       isVerify = true;
     } else if (arg === '--staged' || arg === '-s') {
@@ -81,7 +85,7 @@ export function runCli(args: string[] = process.argv.slice(2)): void {
     } else if (isCheck || isAgent) {
       console.log(formatAgent(result));
     } else if (isShow) {
-      console.log(formatShow(result));
+      console.log(formatShow(result, showFilter));
     } else {
       console.log(formatTerminal(result));
     }

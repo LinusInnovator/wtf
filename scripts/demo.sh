@@ -4,12 +4,17 @@ set -euo pipefail
 # WTF Deterministic Launch Demo
 # Demonstrates: Agent claims done -> WTF catches skipped test & debug log -> Agent fixes -> WTF verify passes
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+WTF_BIN="${WTF_BIN:-$REPO_ROOT/bin/wtf.js}"
+
 DEMO_DIR="$(mktemp -d /tmp/wtf-demo-XXXXXX)"
 trap 'rm -rf "$DEMO_DIR"' EXIT
 
 echo "Setting up demo repository at $DEMO_DIR..."
 
 cd "$DEMO_DIR"
+
 git init -q
 git config user.email "demo@example.com"
 git config user.name "Demo User"
@@ -50,9 +55,8 @@ EOF
 git add .
 git commit -qm "Initial commit"
 
-WTF_BIN="${WTF_BIN:-$(cd "$(dirname "$0")/.." && pwd)/bin/wtf.js}"
-
 echo ""
+
 echo "========================================================="
 echo "STEP 1: AGENT COMPLETION CLAIM"
 echo "========================================================="
