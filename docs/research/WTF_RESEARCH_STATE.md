@@ -2085,14 +2085,147 @@ READY TO FREEZE v0.2: YES
    - `npm run typecheck`: clean (0 errors).
    - `npm run build`: `dist/cli.js` (121.3kb), `dist/evidence-compiler.js` (11.5kb).
 
+---
 
+## 17. Phase 10.0 — Trajectory Runtime Magnification (September 2026)
 
+**Status:** COMPLETE (AUDIT ONLY — ZERO PRODUCTION IMPLEMENTATION)  
+**Baseline:** v0.2.0 Frozen (`ed1dbea`)  
+**Report:** [`docs/research/observations/trajectory_runtime_magnification_phase10_0.md`](file:///Users/linus/Projects/WTF/docs/research/observations/trajectory_runtime_magnification_phase10_0.md)  
+**Governing Rule:** *Magnify the trajectory. Do not build the scheduler.*
 
+### Audit Summary
+- **Useful-Progress / Boundary Detection Audit:**
+  - Reconstructed 8.3 $\to$ 8.3A $\to$ 8.3B evolution.
+  - Phase 8.3B demonstrated 87.5% recall (7/8 true boundaries detected) and 100.0% specificity (0 false alarms across 34 turns) on observable stagnation signals (post-mutation stall $\ge 3$ turns, premature `FINISH`, persistent patch failure $\ge 4$ turns).
+  - Classified as **HYBRID**: Deterministic trajectory observation coupled with heuristic stagnation thresholding.
+  - Constitutional fit requires framing as factual `TRAJECTORY_STAGNATION` rather than diagnosing model cognitive competence.
+- **Compiled Handoff Audit:**
+  - Reconstructed 8.4 $\to$ 8.4A $\to$ 8.4B $\to$ 8.5 evolution.
+  - Slicing bounded code viewports around verified trace coordinates yielded 6 causal Fail $\to$ Pass rescues across local and remote cohorts with zero regressions, cutting redundant reads by 50–87.5%.
+  - Audit confirmed **zero chain-of-thought dependence**: state continuation succeeded with 100% of predecessor reasoning discarded.
+- **Trajectory Runtime Gap:**
+  - Both mechanisms form a coherent Trajectory Perception & State Preservation layer above v0.2.
+  - Model routing, selection, and switching are scheduling policies that belong strictly outside WTF.
+- **Implementation Status:** Zero production code written. Zero new model calls or experiments. Substrate v0.2.0 remains immutable.
 
+---
 
+## 18. Phase 10.1 — v0.3 Trajectory State & Handoff Architecture (September 2026)
 
+**Status:** COMPLETE (ARCHITECTURE SPECIFICATION ONLY — ZERO IMPLEMENTATION)  
+**Baseline:** v0.2.0 Frozen (`ed1dbea`)  
+**Report:** [`docs/research/observations/v0_3_trajectory_runtime_architecture_phase10_1.md`](file:///Users/linus/Projects/WTF/docs/research/observations/v0_3_trajectory_runtime_architecture_phase10_1.md)  
+**Governing Rule:** *Observe trajectory. Preserve reality. Signal stagnation. Decide nothing.*
 
+### Architecture Summary
+- **Three Production Components Specified:**
+  1. `TrajectoryLedger` (`src/core/trajectory-ledger.ts`): Append-only immutable turn ledger recording physical actions and verification outcomes with strict epistemic provenance tags (`DETERMINISTIC_REALITY`, `DERIVED_DETERMINISTIC_STATE`, `INTELLIGENCE_SUPPLIED_CLAIM`). Zero semantic promotion of intelligence claims.
+  2. `TrajectoryStagnationDetector` (`src/core/stagnation-detector.ts`): Ports frozen Phase 8.3B observable rules. Strictly signals `TRAJECTORY_STAGNATION`, `TRAJECTORY_CONTINUE`, `TRAJECTORY_PASS`, `TRAJECTORY_INTERFACE_FRICTION`, `TRAJECTORY_ACTION_FRICTION`. Speculative cognitive terminology (`CAPABILITY_BOUNDARY`, `MODEL_INCAPABLE`) is permanently banned. Autonomous policy decisions = 0.
+  3. `HandoffCompiler` (`src/core/handoff-compiler.ts`): Compiles established computational state (`HandoffPacket`) from git diffs, v0.2 TraceSlice failure frames, v0.2 BoundedViewport code windows, and factual mutation receipts. Zero chain-of-thought, zero scratchpads, zero WTF-generated solutions.
+- **Multi-Coordinate Determination:** v0.3 safely ships using existing single-coordinate bounded viewports (83.3% empirical coverage in Phase 8.4–8.5); multi-coordinate viewport synthesis deferred to post-v0.3 research.
+- **Causal Reproduction Gates Pre-registered:** 4 historical replay gates (Phase 8.3B, 8.4A, 8.4B, 8.5) defined prior to implementation.
+- **Implementation Status:** Specification only. Zero production code written. Zero new experiments executed. Substrate v0.2.0 remains immutable.
 
+---
+
+## 19. Phase 10.2 — v0.3 Trajectory State & Handoff Runtime Implementation (September 2026)
+
+**Status:** COMPLETE  
+**Baseline:** v0.2.0 Frozen (`ed1dbea`)  
+**Report:** [`docs/research/observations/v0_3_trajectory_runtime_implementation_phase10_2.md`](file:///Users/linus/Projects/WTF/docs/research/observations/v0_3_trajectory_runtime_implementation_phase10_2.md)  
+**Governing Rule:** *IMPLEMENT THE SENSOR AND THE MEMORY. DO NOT IMPLEMENT THE DRIVER.*
+
+### Implementation Summary
+- **Three Production Components Implemented & Hardened:**
+  1. `TrajectoryLedger` (`src/core/trajectory-ledger.ts`):
+     - Append-only, frozen turn ledger recording physical actions and verification outcomes.
+     - Strict 3-tier epistemic provenance map (`DETERMINISTIC_REALITY`, `DERIVED_DETERMINISTIC_STATE`, `INTELLIGENCE_SUPPLIED_CLAIM`). Zero semantic promotion of intelligence claims without physical verification.
+     - Tracks cumulative navigation turns, action rejections, post-mutation idle turns, and verification error deltas.
+     - Full JSON serialization and deserialization routines with schema versioning.
+  2. `TrajectoryStagnationDetector` (`src/core/stagnation-detector.ts`):
+     - Implements 4 formal deterministic comparison functions: `areVerificationOutputsIdentical`, `areMutationsIdentical`, `isCoordinateGrounded`, `isUnresolvedFailing`.
+     - Evaluates the 7 hardened rules from the Phase 8.3B hierarchy and Phase 10.1A purity audit.
+     - Emits strictly informational pattern signals (`TRAJECTORY_PASS`, `TRAJECTORY_CONTINUE`, `TRAJECTORY_INTERFACE_FRICTION`, `TRAJECTORY_ACTION_FRICTION`, `TRAJECTORY_STAGNATION`, `TRAJECTORY_UNKNOWN`).
+     - Autonomous policy decisions = 0. Zero abort, retry, model switch, or scheduling logic.
+  3. `HandoffCompiler` (`src/core/handoff-compiler.ts`):
+     - Compiles bounded continuation packets (`HandoffPacket`) from v0.2 `TraceSlice` coordinates, `BoundedViewport` windows, git state, and factual failed mutation logs.
+     - Completely excludes chain-of-thought, scratchpads, speculative solutions, and model reasoning histories.
+     - Formats deterministic, zero-ANSI markdown continuation prompts.
+- **Verification & Test Coverage:**
+  - 26 new unit and integration tests added across 3 suites (`test/trajectory-ledger.test.ts`, `test/stagnation-detector.test.ts`, `test/handoff-compiler.test.ts`).
+  - Total test suite: 17/17 test files, 156/156 tests passing (100%).
+  - Acceptance Gauntlet: 100/100 points across all 10 real-world scenarios.
+  - TypeScript typecheck: clean (0 errors).
+  - Production build: clean (`dist/cli.js` 121.3kb, `dist/evidence-compiler.js` 11.5kb).
+- **Causal Reproduction:** Executed in Phase 10.3 (see Section 20 below).
+
+---
+
+## 20. Phase 10.3 — v0.3 Causal Reproduction (September 2026)
+
+**Status:** COMPLETE  
+**Baseline:** v0.2.0 Frozen (`ed1dbea`) + Phase 10.2 Production Baseline (0 changes during validation)  
+**Report:** [`docs/research/observations/v0_3_causal_reproduction_phase10_3.md`](file:///Users/linus/Projects/WTF/docs/research/observations/v0_3_causal_reproduction_phase10_3.md)  
+**Governing Rule:** *DO NOT HELP v0.3 PASS. FIND OUT WHETHER IT DOES.*
+
+### Reproduction Summary
+- **Gate 1 — Stagnation Detector Replay (Phase 8.3B Cohort):**
+  - **Verdict:** REPRODUCED.
+  - Replayed 8 trajectories (34 turns) from sealed historical data.
+  - Exact Turn-Level Signal Agreement: 30 / 34 (88.2%).
+  - Detected Boundaries: 7 / 8 (87.5% recall).
+  - Missed Boundaries: 1 (`trial_04`, exactly replicating historical 8.3B miss).
+  - False Detections: 0 (100.0% precision).
+  - Specificity: 100.0%.
+- **Gate 2 — Phase 8.4A Handoff Replay (CH-01 & CH-03):**
+  - **Verdict:** PARTIAL.
+  - Substrate integration, verification state, and zero-CoT guarantees reproduced.
+  - Viewport centering diverges because Phase 10.1A removed the experimental `DECL_PATTERNS` prompt-scanning regex heuristic in favor of strictly deterministic runtime coordinates.
+- **Gate 3 — Phase 8.4B Handoff Replication Replay (5 Switched Cases):**
+  - **Verdict:** REPRODUCED.
+  - Replayed switched cases across Rust, Node/TS, and Python.
+  - 100% deterministic packet reproduction, 100% provenance compliance, zero reasoning leakage.
+- **Gate 4 — Phase 8.5 Cross-Substrate Invariance (CH-01 Local $\to$ Remote):**
+  - **Verdict:** REPRODUCED.
+  - Zero model identity assumptions, zero routing metadata, zero candidate solutions.
+  - Continuation packet confirmed fully substrate-agnostic.
+- **Overall Causal Reproduction Verdict:** **CAUSALLY REPRODUCED**
+- **Readiness:** Ready to freeze v0.3.
+
+---
+
+## 21. Phase 10.4 — Freeze WTF v0.3 (September 2026)
+
+**Status:** COMPLETE & FROZEN  
+**Baseline:** v0.3 Trajectory State & Handoff Runtime  
+**Release Manifest:** [`docs/research/WTF_V0_3_RELEASE_MANIFEST.md`](WTF_V0_3_RELEASE_MANIFEST.md)  
+**Package:** `agent-wtf@0.3.0`  
+**Constitutional Mandate:** *OBSERVE TRAJECTORY. PRESERVE REALITY. SIGNAL STAGNATION. DECIDE NOTHING.*
+
+### Final Freeze Verification
+
+1. **Production Scope Frozen:**
+   - `src/core/trajectory-ledger.ts` (Append-only factual turn ledger with 3-tier epistemic provenance)
+   - `src/core/stagnation-detector.ts` (7 frozen observable rules, 4 deterministic comparators, zero policy decisions)
+   - `src/core/handoff-compiler.ts` (State continuation packet, 100% zero-CoT transfer)
+
+2. **Preserved Known Limitation (Gate 2):**
+   *Production handoff uses verified physical failure coordinates. It does not perform prompt-keyword/symbol inference to guess a more semantically useful source location. Phase 10.3 Gate 2 therefore remains PARTIAL by design.*
+
+3. **Negative Boundary Confirmed:**
+   - Zero autonomous policy decisions (detector emits heuristic signals only).
+   - Zero semantic inference (strictly deterministic trace coordinate grounding).
+   - Zero Chain-of-Thought (CoT) transfer (predecessor reasoning discarded across handoff boundary).
+   - Zero model routing, dynamic switching, or candidate ranking.
+   - Zero schedulers or multi-agent execution orchestrators.
+
+4. **Verification Suite Results:**
+   - `npm test`: 18 test files, 160 / 160 passed (100%).
+   - `npm run gauntlet`: 10 / 10 scenarios, 100 / 100 points.
+   - `npm run typecheck`: clean (0 errors).
+   - `npm run build`: `dist/cli.js` (121.3kb), `dist/evidence-compiler.js` (11.5kb).
+   - `wtf check`: Clean receipt (`VERIFIED (3/3) | ATTENTION (0)`).
 
 
 

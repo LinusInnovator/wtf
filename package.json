@@ -1,6 +1,6 @@
 {
   "name": "agent-wtf",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Your coding agent says it's done. WTF checks.",
   "type": "module",
   "bin": {
